@@ -1,0 +1,15 @@
+To do List:
+    Signal processing window
+
+    Pre processing
+        - Define number of persons identified in metadata
+        - Sagittal Points separation
+
+    Filtering
+        
+    Analyse data
+        - Include heatmap visualization
+    
+Desirables:    
+ - Calibration Interface
+ - Reduce Openpose network joints parts
