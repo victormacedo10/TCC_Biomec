@@ -3,8 +3,8 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from utilities import *
 from support import *
+from detection import *
 from preprocessing import *
 
 proto_file = "../Models/Openpose/coco/pose_deploy_linevec.prototxt"
@@ -85,9 +85,15 @@ def visualizeMainKeypoints(frame, sorted_keypoints, persons, joint_pairs):
     
     if (persons[0] == -1) or (max(persons) >= len(sorted_keypoints)):
         persons = np.arange(len(sorted_keypoints))
-        
-    if (joint_pairs[0] == -1):
-        joint_pairs = np.arange(len(pose_pairs)-2)
+    
+    try:
+        joint_pairs[0]
+    except IndexError:
+        pass
+    else:
+        if (joint_pairs[0] == -1):
+            joint_pairs = np.arange(len(pose_pairs)-2)
+    
     
     for n in persons:
         for i in joint_pairs:
@@ -101,8 +107,54 @@ def visualizeMainKeypoints(frame, sorted_keypoints, persons, joint_pairs):
     plt.imshow(frame_out[:,:,[2,1,0]])
     plt.axis("off")
 
-def keypointsFromJSON(video_name, file_name, persons, custom, joint_pose, threshold, 
-                     n_interp_samples, paf_score_th, conf_th, frame_n=0):
+def visualizeSingleKeypoints(frame, sorted_keypoints, joint_pairs):    
+    frame_out = frame.copy()
+        
+    if (joint_pairs[0] == -1):
+        joint_pairs = np.arange(len(pose_pairs)-2)
+    
+    for i in joint_pairs:
+        A = tuple(sorted_keypoints[pose_pairs[i][0]].astype(int))
+        B = tuple(sorted_keypoints[pose_pairs[i][1]].astype(int))
+        if (-1 in A) or (-1 in B):
+            continue
+        cv2.line(frame_out, (A[0], A[1]), (B[0], B[1]), colors[i], 3, cv2.LINE_AA)
+
+    plt.figure(figsize=[9,6])
+    plt.imshow(frame_out[:,:,[2,1,0]])
+    plt.axis("off")
+
+def keypointsFromDATA(video_name, file_name, joint_pose, frame_n=0):
+    if(video_name == "None"):
+        print("No video found")
+        return
+    if(file_name == "None"):
+        print("No DATA found")
+        return
+    video_name = (video_name).split(sep='.')[0]
+    file_dir = data_dir + video_name + '/'
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+    file_path = file_dir + file_name
+    metadata, data = readFrameDATA(file_path, frame_n=frame_n)
+    keypoints = np.array(data["keypoints"]).astype(float)
+    frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
+    
+    video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]
+    image, _, _ = getFrame(video_name_ext[0], frame_n)
+   
+    if joint_pose == 'Sagittal Left':
+        joint_pairs = [1,5,9,10,11,12,15,16,4]
+    elif joint_pose == 'Sagittal Right':
+        joint_pairs = [0,3,6,7,8,12,13,14,2]
+    else:
+        joint_pairs = [-1]
+  
+    visualizeSingleKeypoints(image, keypoints, joint_pairs)
+    
+def keypointsFromJSON(video_name, file_name, persons, custom, joint_pairs, frame_n=0,
+                      threshold=0.1, n_interp_samples=10, paf_score_th=0.1, conf_th=0.7, 
+                      read_file = False):
     if(video_name == "None"):
         print("No video found")
         return
@@ -115,21 +167,26 @@ def keypointsFromJSON(video_name, file_name, persons, custom, joint_pose, thresh
         os.makedirs(file_dir)
     file_path = file_dir + file_name
     metadata, data = readFrameJSON(file_path, frame_n=frame_n)
+
+    if read_file:
+        try:
+            metadata["threshold"]
+        except KeyError:
+            pass
+        else:
+            threshold = metadata["threshold"]
+            n_interp_samples = metadata["n_interp_samples"]
+            paf_score_th = metadata["paf_score_th"]
+            conf_th = metadata["conf_th"]
+
     output = np.array(data["output"]).astype(float)
     frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
-    personwise_keypoints, keypoints_list = processKeypoints(output, frame_width, frame_height, threshold, 
+    personwise_keypoints, keypoints_list = keypointsFromHeatmap(output, frame_width, frame_height, threshold, 
                      n_interp_samples, paf_score_th, conf_th)
     
     
     video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]
     image, _, _ = getFrame(video_name_ext[0], frame_n)
-    
-    if joint_pose == 'Sagittal Left':
-        joint_pairs = [1,5,9,10,11,12,15,16,4]
-    elif joint_pose == 'Sagittal Right':
-        joint_pairs = [0,3,6,7,8,12,13,14,2]
-    else:
-        joint_pairs = [-1]
   
     if persons == 'Biggest':
         p = [custom]
@@ -160,7 +217,7 @@ def heatmapFromJSON(video_name, file_name, joint_n, threshold, alpha, binary,
     metadata, data = readFrameJSON(file_path, frame_n=frame_n)
     output = np.array(data["output"]).astype(float)
     frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
-    personwise_keypoints, keypoints_list = processKeypoints(output, frame_width, frame_height, threshold, 
+    personwise_keypoints, keypoints_list = keypointsFromHeatmap(output, frame_width, frame_height, threshold, 
                      n_interp_samples, paf_score_th, conf_th)
     
     video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]

@@ -32,6 +32,15 @@ def readFrameJSON(file_path, frame_n=0):
                 data = json.loads(line)
     return metadata, data
 
+def readFrameDATA(file_path, frame_n=0):
+    with open(file_path, 'r') as f:
+        for i, line in enumerate(f):
+            if i==0:
+                metadata = json.loads(line)
+            elif i==frame_n+1:
+                data = json.loads(line)
+    return metadata, data
+
 def getJoint(keypoints_list, personwise_keypoints, person, joint_name):
     joint_n = keypoints_mapping.tolist().index(joint_name)
     index = personwise_keypoints[person][joint_n]
@@ -54,6 +63,22 @@ def getFrame(video_name, n):
     frame_height = image.shape[0]
     
     return image, frame_width, frame_height
+
+def getFrames(video_name, n):
+    input_source = videos_dir + video_name
+    
+    cap = cv2.VideoCapture(input_source)
+    
+    frames = []
+    
+    for i in n:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, n)
+        has_frame, image = cap.read()
+        frames.append(image)
+    
+    cap.release()
+    
+    return frames
 
 def angle3pt(a, b, c):
     if b in (a, c):

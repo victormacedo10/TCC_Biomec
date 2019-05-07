@@ -6,7 +6,7 @@ import os
 import ipywidgets as wg
 from IPython.display import display, HTML
 from preparations import *
-from processing import *
+from detection import *
 from visualizations import *
 
 videos_dir = "../Videos/"
@@ -31,7 +31,7 @@ def videoPreviewInterface(video_dropdown):
     video_menu = wg.VBox([video_dropdown, video_wg])
     return video_menu
 
-def editVideoInterface(video_dropdown, frame_n):
+def chooseVideoInterface(video_dropdown, frame_n):
     slider_range = wg.IntRangeSlider(
         value=[0, 100],
         min=0,
@@ -177,7 +177,7 @@ def editVideoInterface(video_dropdown, frame_n):
     vbox2 = wg.VBox([hbox1, hbox3])
     return vbox2        
 
-def processVideoInterface(video_dropdown, json_dropdown, mp4_dropdown):
+def detectKeypointsInterface(video_dropdown, json_dropdown, mp4_dropdown):
     model_nn = wg.Dropdown( options=["None", "Openpose Model"],
                             value="None",
                             description='Inference:',
@@ -232,7 +232,7 @@ def processVideoInterface(video_dropdown, json_dropdown, mp4_dropdown):
     
     return video_menu
 
-def preProcessingInterface(video_dropdown, json_dropdown, frame_n):
+def preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
     persons = wg.RadioButtons(options=['Biggest', 'Unsorted', 'All'],value='Biggest',
                               rows=3,description='Choose:',disabled=False)
     
@@ -241,7 +241,7 @@ def preProcessingInterface(video_dropdown, json_dropdown, frame_n):
                                                align_items='flex-start',justify_content='flex-start',width='90%'))
 
     joint_pose = wg.RadioButtons(options=['Sagittal Left', 'Sagittal Right', 'Whole Body'],value='Sagittal Left',
-                                 rows=3,description='Pose: ',disabled=False,
+                                 rows=4,description='Pose: ',disabled=False,
                                  layout=wg.Layout(display='flex',flex_flow='line',width='90%'))
 
     frame_slider = wg.IntSlider()
@@ -283,9 +283,39 @@ def preProcessingInterface(video_dropdown, json_dropdown, frame_n):
    
     summary = wg.Textarea(value='',placeholder='description',description='Summary:',disabled=False)
 
-    def onPreProcessClicked(b):
-        saveJointFile(video_name, file_name, output_name, threshold, 
-                      n_interp_samples, paf_score_th, conf_th, summary)
+    output_name = wg.Text(value='',placeholder='File output name',description='Output:',disabled=False)
+    
+    def onPreProcessClicked(b): 
+        if(video_dropdown.value == "None"):
+            print("Choose a video")
+            return
+        
+        video_path = videos_dir + video_dropdown.value
+        video_name = (video_dropdown.value).split(sep='.')[0]
+
+        file_dir = data_dir + video_name + '/'
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+
+        files_list = os.listdir(file_dir)
+        json_list = ["None"]
+        for names in files_list:
+            if names.endswith(".json"):
+                json_list.append(names)
+        mp4_list = ["None"]
+        for names in files_list:
+            if names.endswith(".mp4"):
+                mp4_list.append(names)
+        data_list = ["None"]
+        for names in files_list:
+            if names.endswith(".data"):
+                data_list.append(names)
+        json_dropdown.options = json_list
+        mp4_dropdown.options = mp4_list
+        data_dropdown.options = data_list
+        
+        saveJointFile(video_dropdown.value, json_dropdown.value, output_name.value, threshold.value, 
+                      n_interp_samples.value, paf_score_th.value, conf_th.value, summary.value)
 
     preprocess_vid.on_click(onPreProcessClicked)
     
@@ -334,8 +364,81 @@ def preProcessingInterface(video_dropdown, json_dropdown, frame_n):
     for i in range(len(children)):
         tab.set_title(i, tabs[i])
     
-    vbox_res = wg.VBox([show_heatmap, tab, preprocess_vid])
+    hbox_out = wg.HBox([output_name, summary, preprocess_vid])
+    vbox_res = wg.VBox([show_heatmap, tab])
     hbox_res = wg.HBox([out_res, vbox_res])
+    vbox_vid = wg.VBox([hbox_play, hbox_res, hbox_out])
+    
+    return vbox_vid
+
+def processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
+    folder_files = os.listdir(post_dir)
+    py_list = []
+    for names in folder_files:
+        if names.endswith(".py"):
+            py_list.append(names)
+    function = wg.Dropdown(options=py_list,
+                        description='Algorithm:',
+                        disabled=False)
+
+    joint_pose = wg.RadioButtons(options=['Sagittal Left', 'Sagittal Right', 'Whole Body'],value='Sagittal Left',
+                                 rows=4,description='Pose: ',disabled=False,
+                                 layout=wg.Layout(display='flex',flex_flow='line',width='90%'))
+
+    frame_slider = wg.IntSlider()
+    
+    posprocess_vid = wg.Button(description='Pos Process Video')
+    
+    wg.jslink((frame_n, 'value'), (frame_slider, 'value'))
+
+   
+    summary = wg.Textarea(value='',placeholder='description',description='Summary:',disabled=False)
+
+    output_name = wg.Text(value='',placeholder='File output name',description='Output:',disabled=False)
+    
+    def onPosProcessClicked(b): 
+        saveJointFile(video_dropdown.value, json_dropdown.value, output_name.value, threshold.value, 
+                      n_interp_samples.value, paf_score_th.value, conf_th.value, summary.value)
+
+    posprocess_vid.on_click(onPosProcessClicked)
+    
+    hbox_play = wg.HBox([video_dropdown, data_dropdown, frame_n, frame_slider])
+    vbox_per = wg.VBox([joint_pose, function, output_name, summary, posprocess_vid],
+                       layout=wg.Layout(display='flex',flex_flow='column',
+                                                          align_items='flex-start',justify_content='flex-start'))
+    
+    def posprocessView(video_name, file_name, joint_pose, frame_n): 
+        if(video_dropdown.value == "None"):
+            print("Choose a video")
+            return
+        
+        video_path = videos_dir + video_dropdown.value
+        video_name = (video_dropdown.value).split(sep='.')[0]
+
+        file_dir = data_dir + video_name + '/'
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+
+        files_list = os.listdir(file_dir)
+        json_list = ["None"]
+        for names in files_list:
+            if names.endswith(".json"):
+                json_list.append(names)
+        data_list = ["None"]
+        for names in files_list:
+            if names.endswith(".data"):
+                data_list.append(names)
+        json_dropdown.options = json_list
+        data_dropdown.options = data_list
+        keypointsFromDATA(video_name, file_name, joint_pose)
+    
+    out_res = wg.interactive_output(posprocessView, {"video_name": video_dropdown,
+                                                     "file_name": data_dropdown,
+                                                     "joint_pose": joint_pose,
+                                                     "frame_n": frame_n})
+    
+    hbox_out = wg.HBox([output_name, summary, posprocess_vid])
+    hbox_res = wg.HBox([out_res, vbox_per])
     vbox_vid = wg.VBox([hbox_play, hbox_res])
     
     return vbox_vid
@@ -376,25 +479,6 @@ def analyzeDataInterface(video_dropdown, json_dropdown, frame_n):
     vbox_vid = wg.VBox([hbox_play, hbox_res])
     
     return vbox_vid
-
-def postProcessingInterface(json_dropdown):
-    folder_files = os.listdir(post_dir)
-    py_list = []
-    for names in folder_files:
-        if names.endswith(".py"):
-            py_list.append(names)
-    function = wg.Dropdown(options=py_list,
-                        description='Algorithm:',
-                        disabled=False)
-    
-    pp_name = wg.Text(
-        value='',
-        placeholder='File output name',
-        description='Output:',
-        disabled=False
-    )
-    post_box = wg.VBox([json_dropdown, function, pp_name])
-    return post_box
 
 def interactiveInterface():
 
@@ -485,13 +569,12 @@ def interactiveInterface():
     
     video_dropdown.observe(onVideoChange, names='value')
 
-    tabs = ['Choose Video', 'Edit Video', 'Process Video', 'Pre Processing', 'Post Processing', 'Analyze Data']
+    tabs = ['Choose Video', 'Detect Keypoints', 'Pre Processing', 'Processing', 'Analyze Data']
     children = []
-    children.append(videoPreviewInterface(video_dropdown))
-    children.append(editVideoInterface(video_dropdown, frame_n))
-    children.append(processVideoInterface(video_dropdown, json_dropdown, mp4_dropdown))
-    children.append(preProcessingInterface(video_dropdown, json_dropdown, frame_n))
-    children.append(postProcessingInterface(json_dropdown))
+    children.append(chooseVideoInterface(video_dropdown, frame_n))
+    children.append(detectKeypointsInterface(video_dropdown, json_dropdown, mp4_dropdown))
+    children.append(preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
+    children.append(processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(analyzeDataInterface(video_dropdown, json_dropdown, frame_n))
     tab = wg.Tab()
     tab.children = children
