@@ -1,7 +1,5 @@
 To do List:
-    - Terminar Interface
-        * Definir Abas
-        * Ajustar Pre processamento e Detecção
+    -
     
 Desirables:    
     - Calibration Interface

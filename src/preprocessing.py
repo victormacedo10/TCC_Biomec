@@ -84,6 +84,7 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
     vid_writer = cv2.VideoWriter(video_path, fourcc, fps, (frame_width,frame_height))
     
     metadata["summary"] = str(summary)
+    metadata["joint_pairs"] = str(joint_pairs)
     with open(output_path, 'w') as f:
         f.write(json.dumps(metadata))
         f.write('\n')
@@ -111,16 +112,14 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
         main_keypoints = sorted_keypoints[0]
 
         if(miss_points == 'Fill w/ Last'):
-            if (n==0):
-                last_keypoints = main_keypoints
-            else:
+            if (n>0):
                 main_keypoints = fillMissingPoints(main_keypoints, last_keypoints)
+            last_keypoints = np.copy(main_keypoints)
 
         main_keypoints = removePairs(main_keypoints, joint_pairs)
 
         file_data = {
-            'keypoints': main_keypoints.tolist(),
-            'angles': []
+            'keypoints': main_keypoints.tolist()
         }
         
         with open(output_path, 'a') as f:

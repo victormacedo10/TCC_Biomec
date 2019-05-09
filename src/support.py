@@ -39,7 +39,18 @@ def readFrameDATA(file_path, frame_n=0):
                 metadata = json.loads(line)
             elif i==frame_n+1:
                 data = json.loads(line)
-    return metadata, data
+    keypoints = np.array(data["keypoints"]).astype(float)
+    return metadata, keypoints
+
+def readMultipleFramesDATA(file_path, frames=[0]):
+    keypoints_vector = []
+    with open(file_path, 'r') as f:
+        for i, line in enumerate(f):
+            if (i+1) in frames:
+                data = json.loads(line)
+                keypoints_vector.append(data["keypoints"])
+    keypoints_vector = np.array(keypoints_vector).astype(float)
+    return keypoints_vector
 
 def getJoint(keypoints_list, personwise_keypoints, person, joint_name):
     joint_n = keypoints_mapping.tolist().index(joint_name)

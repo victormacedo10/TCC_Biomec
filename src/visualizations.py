@@ -136,8 +136,7 @@ def keypointsFromDATA(video_name, file_name, joint_pose, frame_n=0):
     if not os.path.exists(file_dir):
         os.makedirs(file_dir)
     file_path = file_dir + file_name
-    metadata, data = readFrameDATA(file_path, frame_n=frame_n)
-    keypoints = np.array(data["keypoints"]).astype(float)
+    metadata, keypoints = readFrameDATA(file_path, frame_n=frame_n)
     frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
     
     video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]

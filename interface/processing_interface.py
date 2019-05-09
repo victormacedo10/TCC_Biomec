@@ -10,6 +10,7 @@ sys.path.append('../src/')
 from preparations import *
 from detection import *
 from visualizations import *
+from processing import *
 
 videos_dir = "../Videos/"
 data_dir = "../Data/"
@@ -21,8 +22,8 @@ keypoints_mapping = ['Nose', 'Neck', 'Right Sholder', 'Right Elbow', 'Right Wris
 
 def processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
     def onPosProcessClicked(b): 
-        saveJointFile(video_dropdown.value, json_dropdown.value, output_name.value, threshold.value, 
-                      n_interp_samples.value, paf_score_th.value, conf_th.value, summary.value)
+        saveProcessedFile(video_dropdown.value, data_dropdown.value, output_name.value, 
+                        function.value, summary.value)
 
     def posprocessView(video_name, file_name, frame_n): 
         if(video_dropdown.value == "None"):

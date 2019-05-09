@@ -60,6 +60,7 @@ def preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n
                       p1_2, p1_5, p2_3, p3_4, p5_6, p6_7, p1_8, p8_9, p9_10, p1_11, p11_12,
                       p12_13, p1_0, p0_14, p14_16, p0_15, p15_17):
 
+        joint_p = []
         if joint_pose == 'Sagittal Left':
             joint_p = [1,5,9,10,11,12,15,16,4]
         elif joint_pose == 'Sagittal Right':
