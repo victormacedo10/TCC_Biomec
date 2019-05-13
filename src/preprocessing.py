@@ -116,6 +116,11 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
                 main_keypoints = fillMissingPoints(main_keypoints, last_keypoints)
             last_keypoints = np.copy(main_keypoints)
 
+        # elif(miss_points == 'Fill w/ Kalman'):
+        #     if (n>0):
+        #         main_keypoints = fillMissingPoints(main_keypoints, last_keypoints)
+        #     last_keypoints = np.copy(main_keypoints)
+
         main_keypoints = removePairs(main_keypoints, joint_pairs)
 
         file_data = {
