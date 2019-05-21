@@ -10,6 +10,7 @@ from choose_video_interface import *
 from detect_keypoints_interface import *
 from pre_process_interface import *
 from processing_interface import *
+from gt_interface import *
 from analyze_data_interface import *
 sys.path.append('../src/')
 from preparations import *
@@ -113,12 +114,13 @@ def interactiveInterface():
     
     video_dropdown.observe(onVideoChange, names='value')
 
-    tabs = ['Choose Video', 'Detect Keypoints', 'Pre Processing', 'Processing', 'Analyze Data']
+    tabs = ['Choose Video', 'Detect Keypoints', 'Pre Processing', 'Processing', 'Ground Truth', 'Analyze Data']
     children = []
     children.append(chooseVideoInterface(video_dropdown, frame_n))
     children.append(detectKeypointsInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
+    children.append(gtInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(analyzeDataInterface(video_dropdown, json_dropdown, frame_n))
     tab = wg.Tab()
     tab.children = children
