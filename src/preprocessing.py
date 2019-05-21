@@ -58,6 +58,12 @@ def removePairs(main_keypoints, joint_pairs):
         out_keypoints[i] = main_keypoints[i]
     return out_keypoints
 
+def removePairsFile(main_keypoints, joints):
+    out_keypoints = []
+    for i in joints:
+        out_keypoints.append(main_keypoints[i])
+    return np.array(out_keypoints)
+
 def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, miss_points):
     
     print("Saving...")
@@ -83,8 +89,14 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
     fourcc = cv2.VideoWriter_fourcc(*'X264')
     vid_writer = cv2.VideoWriter(video_path, fourcc, fps, (frame_width,frame_height))
     
+    metadata["joint_pairs"] = joint_pairs
     metadata["summary"] = str(summary)
-    metadata["joint_pairs"] = str(joint_pairs)
+    
+    pairs = []
+    for j in joint_pairs:
+        pairs.append(pose_pairs[j])
+    joints = np.unique(pairs)
+
     with open(output_path, 'w') as f:
         f.write(json.dumps(metadata))
         f.write('\n')
@@ -121,7 +133,7 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
         #         main_keypoints = fillMissingPoints(main_keypoints, last_keypoints)
         #     last_keypoints = np.copy(main_keypoints)
 
-        main_keypoints = removePairs(main_keypoints, joint_pairs)
+        main_keypoints = removePairsFile(main_keypoints, joints)
 
         file_data = {
             'keypoints': main_keypoints.tolist()
@@ -133,9 +145,12 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
         
         frame, _, _ = getFrame(video_name_ext, n)
         
-        for i in range(n_points-1):
-            A = tuple(main_keypoints[pose_pairs[i][0]].astype(int))
-            B = tuple(main_keypoints[pose_pairs[i][1]].astype(int))
+        for i in joint_pairs:
+            pose_pairs[i][0]
+            a_idx = (joints.tolist()).index(pose_pairs[i][0])
+            b_idx = (joints.tolist()).index(pose_pairs[i][1])
+            A = tuple(main_keypoints[a_idx].astype(int))
+            B = tuple(main_keypoints[b_idx].astype(int))
             if (-1 in A) or (-1 in B):
                 continue
             cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors[i], 3, cv2.LINE_AA)

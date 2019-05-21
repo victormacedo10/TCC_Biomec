@@ -6,6 +6,7 @@ import os
 import ipywidgets as wg
 from IPython.display import display, HTML
 import sys
+from preview_video_interface import *
 from choose_video_interface import *
 from detect_keypoints_interface import *
 from pre_process_interface import *
@@ -114,8 +115,9 @@ def interactiveInterface():
     
     video_dropdown.observe(onVideoChange, names='value')
 
-    tabs = ['Choose Video', 'Detect Keypoints', 'Pre Processing', 'Processing', 'Ground Truth', 'Analyze Data']
+    tabs = ['Preview Video', 'Choose Video', 'Detect Keypoints', 'Pre Processing', 'Processing', 'Ground Truth', 'Analyze Data']
     children = []
+    children.append(videoPreviewInterface(video_dropdown, json_dropdown, data_dropdown))
     children.append(chooseVideoInterface(video_dropdown, frame_n))
     children.append(detectKeypointsInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
