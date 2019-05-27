@@ -48,7 +48,7 @@ def processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
                 data_list.append(names)
         json_dropdown.options = json_list
         data_dropdown.options = data_list
-        keypointsFromDATA(video_name, file_name, ['Whole Body'], frame_n)
+        keypointsFromDATA(video_name, file_name, frame_n)
 
     folder_files = os.listdir(post_dir)
     py_list = []

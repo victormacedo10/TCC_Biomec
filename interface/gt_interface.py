@@ -7,6 +7,7 @@ import ipywidgets as wg
 from IPython.display import display, HTML
 import sys
 sys.path.append('../src/')
+from gt import *
 from preparations import *
 from detection import *
 from visualizations import *
@@ -20,65 +21,19 @@ keypoints_mapping = ['Nose', 'Neck', 'Right Sholder', 'Right Elbow', 'Right Wris
                     'Left Elbow', 'Left Wrist', 'Right Hip', 'Right Knee', 'Right Ankle', 'Left Hip', 
                     'Left Knee', 'Left Ankle', 'Right Eye', 'Left Eye', 'Right Ear', 'Left Ear']
 
-def gtInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
-    def onPosProcessClicked(b): 
-        saveProcessedFile(video_dropdown.value, data_dropdown.value, output_name.value, 
-                        function.value, summary.value)
-
-    def posprocessView(video_name, file_name, frame_n): 
-        if(video_dropdown.value == "None"):
-            print("Choose a video")
-            return
-        
-        video_path = videos_dir + video_dropdown.value
-        video_name = (video_dropdown.value).split(sep='.')[0]
-
-        file_dir = data_dir + video_name + '/'
-        if not os.path.exists(file_dir):
-            os.makedirs(file_dir)
-
-        files_list = os.listdir(file_dir)
-        json_list = ["None"]
-        for names in files_list:
-            if names.endswith(".json"):
-                json_list.append(names)
-        data_list = ["None"]
-        for names in files_list:
-            if names.endswith(".data"):
-                data_list.append(names)
-        json_dropdown.options = json_list
-        data_dropdown.options = data_list
-        keypointsFromDATA(video_name, file_name, ['Whole Body'], frame_n)
-
-    folder_files = os.listdir(post_dir)
-    py_list = []
-    for names in folder_files:
-        if names.endswith(".py"):
-            py_list.append(names)
-    function = wg.Dropdown(options=py_list,
-                        description='Algorithm:',
-                        disabled=False)
-
-    frame_slider = wg.IntSlider()
-    wg.jslink((frame_n, 'value'), (frame_slider, 'value'))
+def gtInterface(video_dropdown, data_dropdown):
+    def onStartClicked(b): 
+        gtRoutine(video_dropdown.value, data_dropdown.value, 
+                output_name.value, summary.value)
     
-    posprocess_vid = wg.Button(description='Pos Process Video')
+    label_button = wg.Button(description='Start Labeling')
    
     summary = wg.Textarea(value='',placeholder='description',description='Summary:',disabled=False)
 
     output_name = wg.Text(value='',placeholder='File output name',description='Output:',disabled=False)
 
-    posprocess_vid.on_click(onPosProcessClicked)
+    label_button.on_click(onStartClicked)
     
-    video_display = wg.interactive_output(posprocessView, {"video_name": video_dropdown,
-                                                     "file_name": data_dropdown,
-                                                     "frame_n": frame_n})
+    vbox = wg.VBox([video_dropdown, data_dropdown, output_name, summary, label_button]) 
     
-    hbox_input = wg.HBox([video_dropdown, data_dropdown])
-    hbox_play = wg.HBox([frame_n, frame_slider])
-    vbox_config = wg.VBox([function, output_name, summary, posprocess_vid]) 
-    vbox_vid = wg.VBox([video_display, hbox_play])
-    hbox_res = wg.HBox([vbox_vid, vbox_config])
-    vbox_res = wg.VBox([hbox_input, hbox_res])
-    
-    return vbox_res
+    return vbox

@@ -2,6 +2,7 @@ import os
 import sys
 import cv2
 import time
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 from support import *
@@ -20,11 +21,12 @@ map_idx = np.array([[31,32], [39,40], [33,34], [35,36], [41,42], [43,44],
 pose_pairs = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
               [1,8], [8,9], [9,10], [1,11], [11,12], [12,13],
               [1,0], [0,14], [14,16], [0,15], [15,17],
-              [2,17], [5,16]])
+              [2,17], [5,16], [2, 8], [5, 11]])
 
-colors = [ [0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255],
+colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255],
          [0,255,0], [255,200,100], [255,0,255], [0,255,0], [255,200,100], [255,0,255],
-         [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], [0,0,0]]
+         [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], 
+         [0,0,0], [0,0,0], [0,255,0], [0,255,0]]
 
 
 def saveProcessedFile(video_name_ext, file_name, output_name, function_ext, summary):
@@ -42,16 +44,22 @@ def saveProcessedFile(video_name_ext, file_name, output_name, function_ext, summ
     if not os.path.exists(file_dir):
         os.makedirs(file_dir)
     file_path = file_dir + file_name
-    metadata, data = readFrameJSON(file_path, frame_n=0)
+    metadata, data = readFrameDATA(file_path, frame_n=0)
     n_frames, fps = metadata["n_frames"], metadata["fps"]
     frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
     
+    joint_pairs = metadata["joint_pairs"]
+    pairs = []
+    for j in joint_pairs:
+        pairs.append(pose_pairs[j])
+    joints = np.unique(pairs)
+
     output_path = file_dir + output_name + ".data"
     video_path = file_dir + output_name + ".mp4"
     
     fourcc = cv2.VideoWriter_fourcc(*'X264')
     vid_writer = cv2.VideoWriter(video_path, fourcc, fps, (frame_width,frame_height))
-    
+
     metadata["summary"] = str(summary)
     with open(output_path, 'w') as f:
         f.write(json.dumps(metadata))
@@ -76,9 +84,12 @@ def saveProcessedFile(video_name_ext, file_name, output_name, function_ext, summ
         
         frame, _, _ = getFrame(video_name_ext, n)
         
-        for i in range(n_points-1):
-            A = tuple(main_keypoints[pose_pairs[i][0]].astype(int))
-            B = tuple(main_keypoints[pose_pairs[i][1]].astype(int))
+        for i in joint_pairs:
+            pose_pairs[i][0]
+            a_idx = (joints.tolist()).index(pose_pairs[i][0])
+            b_idx = (joints.tolist()).index(pose_pairs[i][1])
+            A = tuple(main_keypoints[a_idx].astype(int))
+            B = tuple(main_keypoints[b_idx].astype(int))
             if (-1 in A) or (-1 in B):
                 continue
             cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors[i], 3, cv2.LINE_AA)

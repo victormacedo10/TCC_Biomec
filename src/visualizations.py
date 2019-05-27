@@ -15,11 +15,12 @@ data_dir = "../Data/"
 pose_pairs = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
               [1,8], [8,9], [9,10], [1,11], [11,12], [12,13],
               [1,0], [0,14], [14,16], [0,15], [15,17],
-              [2,17], [5,16]])
+              [2,17], [5,16], [2, 8], [5, 11]])
 
-colors = [ [0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255],
+colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255],
          [0,255,0], [255,200,100], [255,0,255], [0,255,0], [255,200,100], [255,0,255],
-         [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], [0,0,0]]
+         [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], 
+         [0,0,0], [0,0,0], [0,255,0], [0,255,0]]
 
 def visualizePoints(keypoints_list, personwise_keypoints, person, joint_n):
     index = int(personwise_keypoints[person][joint_n])
@@ -124,7 +125,24 @@ def visualizeSingleKeypoints(frame, sorted_keypoints, joint_pairs):
     plt.imshow(frame_out[:,:,[2,1,0]])
     plt.axis("off")
 
-def keypointsFromDATA(video_name, file_name, joint_pose, frame_n=0):
+def keypointsDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3):
+    pairs = []
+    for j in joint_pairs:
+        pairs.append(pose_pairs[j])
+    joints = np.unique(pairs)
+
+    for i in joint_pairs:
+        pose_pairs[i][0]
+        a_idx = (joints.tolist()).index(pose_pairs[i][0])
+        b_idx = (joints.tolist()).index(pose_pairs[i][1])
+        A = tuple(main_keypoints[a_idx].astype(int))
+        B = tuple(main_keypoints[b_idx].astype(int))
+        if (-1 in A) or (-1 in B):
+            continue
+        cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors[i], thickness, cv2.LINE_AA)
+    return frame
+
+def keypointsFromDATA(video_name, file_name, frame_n=0):
     if(video_name == "None"):
         print("No video found")
         return
@@ -138,18 +156,14 @@ def keypointsFromDATA(video_name, file_name, joint_pose, frame_n=0):
     file_path = file_dir + file_name
     metadata, keypoints = readFrameDATA(file_path, frame_n=frame_n)
     frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
-    
+    joint_pairs = metadata["joint_pairs"]
+
     video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]
+    
     image, _, _ = getFrame(video_name_ext[0], frame_n)
-   
-    if joint_pose == 'Sagittal Left':
-        joint_pairs = [1,5,9,10,11,12,15,16,4]
-    elif joint_pose == 'Sagittal Right':
-        joint_pairs = [0,3,6,7,8,12,13,14,2]
-    else:
-        joint_pairs = [-1]
-  
-    visualizeSingleKeypoints(image, keypoints, joint_pairs)
+    frame = keypointsDATAtoFrame(image, keypoints, joint_pairs)
+    showFrame(frame)
+
     
 def keypointsFromJSON(video_name, file_name, persons, custom, joint_pairs, frame_n=0,
                       threshold=0.1, n_interp_samples=10, paf_score_th=0.1, conf_th=0.7, 
@@ -237,3 +251,7 @@ def heatmapFromJSON(video_name, file_name, joint_n, threshold, alpha, binary,
         #plt.colorbar()
         plt.axis("off")
         
+def showFrame(frame):
+    plt.figure(figsize=[9,6])
+    plt.imshow(frame[:,:,[2,1,0]])
+    plt.axis("off")

@@ -23,7 +23,7 @@ pairs_mapping = ['Neck - R-Sho', 'Neck - L-Sho', 'R-Sho - R-Elb', 'R-Elb - R-Wr'
                 'L-Sho - L-Elb', 'L-Elb - L-Wr', 'Neck - R-Hip' ,'R-Hip - R-Knee',  
                 'R-Knee - R-Ank', 'Neck - L-Hip', 'L-Hip - L-Knee', 'L-Knee - L-Ank',  
                 'Neck - Nose', 'Nose-R - Eye', 'R-Eye - R-Ear', 'Nose - L-Eye',
-                'L-Eye - L-Ear', 'R-Sho - L-Ear', 'L-Sho - R-Ear']
+                'L-Eye - L-Ear', 'R-Sho - L-Ear', 'L-Sho - R-Ear', 'R-Sho - R-Hip', 'L-Sho - L-Hip']
 
 joint_pairs = []
 
@@ -62,9 +62,11 @@ def preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n
 
         joint_p = []
         if joint_pose == 'Sagittal Left':
-            joint_p = [1,5,9,10,11,12,15,16,4]
+            #joint_p = [1,5,9,10,11,12,15,16,4]
+            joint_p = [5,10,11,4,20]
         elif joint_pose == 'Sagittal Right':
-            joint_p = [0,3,6,7,8,12,13,14,2]
+            #joint_p = [0,3,6,7,8,12,13,14,2]
+            joint_p = [3,7,8,2,19]
         elif joint_pose == 'Whole Body':
             joint_p = [-1]
         else:
