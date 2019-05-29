@@ -123,7 +123,7 @@ def interactiveInterface():
     children.append(preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(gtInterface(video_dropdown, data_dropdown))
-    children.append(analyzeDataInterface(video_dropdown, json_dropdown, frame_n))
+    children.append(analyzeDataInterface(video_dropdown, data_dropdown, frame_n))
     tab = wg.Tab()
     tab.children = children
     for i in range(len(children)):

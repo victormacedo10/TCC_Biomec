@@ -22,6 +22,15 @@ colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,10
          [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], 
          [0,0,0], [0,0,0], [0,255,0], [0,255,0]]
 
+colors_2 = [[255,0,0], [0,255,0], [0,0,255], [0,255,255],[255,255,0], 
+         [255,0,255], [0,255,0], [255,200,100], [200,255,100],
+         [100,255,200], [255,100,200], [100,200,255], [200,100,255],
+         [200,200,0], [200,0,200],[0,200,200]]
+
+keypoints_mapping = ['Nose', 'Neck', 'Right Sholder', 'Right Elbow', 'Right Wrist', 'Left Sholder', 
+                    'Left Elbow', 'Left Wrist', 'Right Hip', 'Right Knee', 'Right Ankle', 'Left Hip', 
+                    'Left Knee', 'Left Ankle', 'Right Eye', 'Left Eye', 'Right Ear', 'Left Ear']
+
 def visualizePoints(keypoints_list, personwise_keypoints, person, joint_n):
     index = int(personwise_keypoints[person][joint_n])
     if(index == -1):
@@ -125,7 +134,7 @@ def visualizeSingleKeypoints(frame, sorted_keypoints, joint_pairs):
     plt.imshow(frame_out[:,:,[2,1,0]])
     plt.axis("off")
 
-def keypointsDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3):
+def keypointsDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3, color = -1):
     pairs = []
     for j in joint_pairs:
         pairs.append(pose_pairs[j])
@@ -139,7 +148,28 @@ def keypointsDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3):
         B = tuple(main_keypoints[b_idx].astype(int))
         if (-1 in A) or (-1 in B):
             continue
-        cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors[i], thickness, cv2.LINE_AA)
+        if(color == -1):
+            cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors[i], thickness, cv2.LINE_AA)
+        else:
+            cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_2[color], thickness, cv2.LINE_AA)
+    return frame
+
+def pointDATAtoFrame(frame, main_keypoints, joint_pairs, point, thickness=3, color = -1):
+    pairs = []
+    for j in joint_pairs:
+        pairs.append(pose_pairs[j])
+    joints = np.unique(pairs)
+
+    point_n = keypoints_mapping.index(point)
+    joints = joints.tolist()
+    if point_n in joints:
+        point_idx = joints.index(point_n)
+        A = tuple(main_keypoints[point_idx].astype(int))
+        if (-1 in A):
+            return frame
+
+        cv2.circle(frame, (A[0], A[1]), thickness, colors_2[color], -1)
+
     return frame
 
 def keypointsFromDATA(video_name, file_name, frame_n=0):
@@ -155,7 +185,6 @@ def keypointsFromDATA(video_name, file_name, frame_n=0):
         os.makedirs(file_dir)
     file_path = file_dir + file_name
     metadata, keypoints = readFrameDATA(file_path, frame_n=frame_n)
-    frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
     joint_pairs = metadata["joint_pairs"]
 
     video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]
@@ -164,6 +193,33 @@ def keypointsFromDATA(video_name, file_name, frame_n=0):
     frame = keypointsDATAtoFrame(image, keypoints, joint_pairs)
     showFrame(frame)
 
+def keypointsFromDATACompare(video_name, file_names = ['None'], frame_n=0, show_point=False, 
+                            point='Nose', thickness=3):
+    if(video_name == "None"):
+        print("No video found")
+        return
+    if(file_names[0] == "None"):
+        image, _, _ = getFrame(video_name, frame_n)
+        showFrame(image)
+        return
+
+    frame, _, _ = getFrame(video_name, frame_n)
+
+    video_name = (video_name).split(sep='.')[0]
+    file_dir = data_dir + video_name + '/'
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+    
+    for i in range(len(file_names)):
+        file_path = file_dir + file_names[i]
+        metadata, keypoints = readFrameDATA(file_path, frame_n=frame_n)
+        joint_pairs = metadata["joint_pairs"]
+        if show_point:
+            frame = pointDATAtoFrame(frame, keypoints, joint_pairs, point, thickness, color=i)
+        else:
+            frame = keypointsDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=i)
+    
+    showFrame(frame)
     
 def keypointsFromJSON(video_name, file_name, persons, custom, joint_pairs, frame_n=0,
                       threshold=0.1, n_interp_samples=10, paf_score_th=0.1, conf_th=0.7, 
