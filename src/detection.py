@@ -3,6 +3,7 @@ import time
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import json
 
 proto_file = "../Models/Openpose/coco/pose_deploy_linevec.prototxt"
 weights_file = "../Models/Openpose/coco/pose_iter_440000.caffemodel"

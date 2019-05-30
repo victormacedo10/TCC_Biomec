@@ -22,7 +22,7 @@ colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,10
          [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], 
          [0,0,0], [0,0,0], [0,255,0], [0,255,0]]
 
-colors_2 = [[255,0,0], [0,255,0], [0,0,255], [0,255,255],[255,255,0], 
+colors_2 = [[0,255,0], [255,0,0], [0,0,255], [0,255,255],[255,255,0], 
          [255,0,255], [0,255,0], [255,200,100], [200,255,100],
          [100,255,200], [255,100,200], [100,200,255], [200,100,255],
          [200,200,0], [200,0,200],[0,200,200]]
@@ -193,12 +193,12 @@ def keypointsFromDATA(video_name, file_name, frame_n=0):
     frame = keypointsDATAtoFrame(image, keypoints, joint_pairs)
     showFrame(frame)
 
-def keypointsFromDATACompare(video_name, file_names = ['None'], frame_n=0, show_point=False, 
-                            point='Nose', thickness=3):
+def keypointsFromDATACompare(video_name, file_names = ['None'], file_ref = ['None'], frame_n=0,
+                            show_point=False, point='Nose', thickness=3):
     if(video_name == "None"):
         print("No video found")
         return
-    if(file_names[0] == "None"):
+    if(file_names[0] == "None" and file_ref == "None"):
         image, _, _ = getFrame(video_name, frame_n)
         showFrame(image)
         return
@@ -210,14 +210,27 @@ def keypointsFromDATACompare(video_name, file_names = ['None'], frame_n=0, show_
     if not os.path.exists(file_dir):
         os.makedirs(file_dir)
     
+    if(file_ref != "None"):
+        file_path = file_dir + file_ref
+        metadata, keypoints = readFrameDATA(file_path, frame_n=frame_n)
+        joint_pairs = metadata["joint_pairs"]
+        if show_point:
+            frame = pointDATAtoFrame(frame, keypoints, joint_pairs, point, thickness, color=0)
+        else:
+            frame = keypointsDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=0)
+
+    if(file_names[0] == "None"):
+        showFrame(frame)
+        return
+
     for i in range(len(file_names)):
         file_path = file_dir + file_names[i]
         metadata, keypoints = readFrameDATA(file_path, frame_n=frame_n)
         joint_pairs = metadata["joint_pairs"]
         if show_point:
-            frame = pointDATAtoFrame(frame, keypoints, joint_pairs, point, thickness, color=i)
+            frame = pointDATAtoFrame(frame, keypoints, joint_pairs, point, thickness, color=i+1)
         else:
-            frame = keypointsDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=i)
+            frame = keypointsDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=i+1)
     
     showFrame(frame)
     

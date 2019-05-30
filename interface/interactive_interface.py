@@ -67,6 +67,9 @@ def interactiveInterface():
     data_dropdown = wg.Dropdown(options=data_list,
                             description='Data:',
                             disabled=False)  
+    data_ref = wg.Dropdown(options=data_list,
+                            description='Reference:',
+                            disabled=False) 
     
     frame_n = wg.Play(
         value=0,
@@ -105,6 +108,7 @@ def interactiveInterface():
         json_dropdown.options = json_list
         mp4_dropdown.options = mp4_list
         data_dropdown.options = data_list
+        data_ref.options = data_list
         cap = cv2.VideoCapture(videos_dir + video_dropdown.value)
         framewidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frameheight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -123,7 +127,7 @@ def interactiveInterface():
     children.append(preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(gtInterface(video_dropdown, data_dropdown))
-    children.append(analyzeDataInterface(video_dropdown, data_dropdown, frame_n))
+    children.append(analyzeDataInterface(video_dropdown, data_dropdown, data_ref, frame_n))
     tab = wg.Tab()
     tab.children = children
     for i in range(len(children)):
