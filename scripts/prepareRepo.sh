@@ -14,6 +14,7 @@ cd ../
 mkdir Videos
 mkdir Data
 mkdir Models
+mkdir Others
 
 cd Models
 wget -c ${OPENPOSE_URL}${COCO_MODEL} -P ${COCO_FOLDER}

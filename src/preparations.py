@@ -5,20 +5,28 @@ import matplotlib.pyplot as plt
 from support import getFrame
 
 videos_dir = "../Videos/"
+allvid_dir = "../Others/"
 data_dir = "../Data/"
 
 def calibrateVideo():
     pass
 
-def editVideo(video_name, n, r, x=[0,-1], y=[0,-1], in_height=-1, save_vid=False, output_path='None'):
-    if(video_name == "None"):
+def editVideo(video_name, allvid_name, n, r, x=[0,-1], y=[0,-1], in_height=-1, 
+            save_vid=False, output_path='None'):
+    allvid = False
+    if(video_name == "None" and allvid_name == "None"):
         print("Choose a video")
         return
+    elif(allvid_name != "None"):
+        video_name = allvid_name
+        input_source = allvid_dir + video_name
+        allvid = True
+    else:
+        input_source = videos_dir + video_name
 
     n = int(np.round(n))
     
     if save_vid:            
-        input_source = videos_dir + video_name
         cap = cv2.VideoCapture(input_source)
         length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = int(cap.get(cv2.CAP_PROP_FPS))
@@ -61,10 +69,9 @@ def editVideo(video_name, n, r, x=[0,-1], y=[0,-1], in_height=-1, save_vid=False
         print()
         print("Video saved")
     else:
-        image, frame_width, frame_height = getFrame(video_name, n)
+        image, frame_width, frame_height = getFrame(video_name, n, allvid)
         if(in_height != frame_height):
             in_width = int((in_height/frame_height)*frame_width)
-            print(in_width, in_height)
             image = cv2.resize(image, (in_width, in_height), interpolation = cv2.INTER_AREA)
         image = image[y[0]:y[1],x[0]:x[1]]
         plt.figure(figsize=[8,5])

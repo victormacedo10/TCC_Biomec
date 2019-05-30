@@ -225,7 +225,6 @@ def preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n
 
     vbox_config = wg.VBox([tab, output_name, summary, preprocess_vid])
     hbox_res = wg.HBox([video_player, vbox_config])
-
     vbox_res = wg.VBox([hbox_filein, hbox_res])
     
     return vbox_res

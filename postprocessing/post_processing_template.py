@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../src/')
 from support import *
 
 def processing_function(file_path, n):

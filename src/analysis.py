@@ -62,10 +62,12 @@ def plotTrajectory(video_name, file_names, file_ref, point, coord='x'):
         if(file_ref != 'None'):
             file_path = file_dir + file_ref
             _, keypoints = readAllFramesDATA(file_path)
+            keypoints = np.where(keypoints==-1, np.nan, keypoints)
             plt.plot(keypoints[:, point_idx, 0], label="Reference")
         for file_name in file_names:
             file_path = file_dir + file_name
             _, keypoints = readAllFramesDATA(file_path)
+            keypoints = np.where(keypoints==-1, np.nan, keypoints)
             plt.plot(keypoints[:, point_idx, 0], label=(file_name).split(sep='.')[0])
         plt.legend()
     else:
@@ -75,10 +77,12 @@ def plotTrajectory(video_name, file_names, file_ref, point, coord='x'):
         if(file_ref != 'None'):
             file_path = file_dir + file_ref
             _, keypoints = readAllFramesDATA(file_path)
+            keypoints = np.where(keypoints==-1, np.nan, keypoints)
             plt.plot(keypoints[:, point_idx, 1], label="Referência")
         for file_name in file_names:
             file_path = file_dir + file_name
             _, keypoints = readAllFramesDATA(file_path)
+            keypoints = np.where(keypoints==-1, np.nan, keypoints)
             plt.plot(keypoints[:, point_idx, 1], label=(file_name).split(sep='.')[0])
         plt.legend()
 
@@ -116,7 +120,10 @@ def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def
 
     if(error_type=='Error Graph'):
         plt.figure(figsize=[9,6])
-        plt.title("Error x Frame ({})".format(point))
+        if def_error:
+            plt.title("Error x Frame ({})".format(point))
+        else:
+            plt.title("Error x Frame (Total)")
         plt.grid(True)
     else:
         data = np.zeros([len(file_names), len(joints)+1])
@@ -148,7 +155,7 @@ def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def
                         fn+=1
                         fn_vec[k]+=1
                         E_tmp[k] = 0
-                E = np.sum(E_tmp, axis=0)/len(joints-fn)
+                E = np.sum(E_tmp, axis=0)/(len(joints)-fn)
                 Et_keypoints += E_tmp
                 E_tmp = np.where(E_tmp==0, np.nan, E_tmp)
             else:        
@@ -187,7 +194,7 @@ def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def
         df = pd.DataFrame(data=data,columns=col, index=row)
         with pd.option_context('display.float_format', '{:0.2f}'.format):
             display(df)
-    elif(error_type=='FN'):
+    elif(error_type=='False Negatives DF'):
         col = []
         for joint in joints:
             col.append("$FN_{" + km[joint] + "}$")
@@ -196,5 +203,5 @@ def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def
         for file_name in file_names:
             row.append((file_name).split(sep='.')[0])
         df = pd.DataFrame(data=data_fn,columns=col, index=row)
-        with pd.option_context('display.float_format', '{:0.2f}'.format):
+        with pd.option_context('display.float_format', '{:0.0f}'.format):
             display(df)

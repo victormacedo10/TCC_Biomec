@@ -9,6 +9,7 @@ keypoints_mapping = np.array(['Nose', 'Neck', 'R-Sho', 'R-Elb', 'R-Wr', 'L-Sho',
                     'L-Knee', 'L-Ank', 'R-Eye', 'L-Eye', 'R-Ear', 'L-Ear'])
 
 videos_dir = "../Videos/"
+allvid_dir = "../Others/"
 data_dir = "../Data/"
 
 n_points = 18
@@ -71,8 +72,11 @@ def getJoint(keypoints_list, personwise_keypoints, person, joint_name):
     Y = np.int32(keypoints_list[index.astype(int), 1])
     return (X, Y)
 
-def getFrame(video_name, n):
-    input_source = videos_dir + video_name
+def getFrame(video_name, n, allvid=False):
+    if allvid:
+        input_source = allvid_dir + video_name
+    else:
+        input_source = videos_dir + video_name
     
     cap = cv2.VideoCapture(input_source)
 

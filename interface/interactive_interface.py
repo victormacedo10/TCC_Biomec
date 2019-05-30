@@ -19,6 +19,7 @@ from detection import *
 from visualizations import *
 
 videos_dir = "../Videos/"
+allvid_dir = "../Others/"
 data_dir = "../Data/"
 post_dir = "../postprocessing/"
 
@@ -34,6 +35,14 @@ def interactiveInterface():
         video_options.append(video)
     video_dropdown = wg.Dropdown( options=video_options,
                             description='Video:',
+                            disabled=False)
+       
+    allvid_list = os.listdir(allvid_dir)
+    allvid_options = ["None"]
+    for allvid in allvid_list:
+        allvid_options.append(allvid)
+    allvid_dropdown = wg.Dropdown( options=allvid_options,
+                            description='All Videos:',
                             disabled=False)
 
     video_path = videos_dir + video_dropdown.value
@@ -122,7 +131,7 @@ def interactiveInterface():
     tabs = ['Preview Video', 'Choose Video', 'Detect Keypoints', 'Pre Processing', 'Processing', 'Ground Truth', 'Analyze Data']
     children = []
     children.append(videoPreviewInterface(video_dropdown, json_dropdown, data_dropdown))
-    children.append(chooseVideoInterface(video_dropdown, frame_n))
+    children.append(chooseVideoInterface(video_dropdown, allvid_dropdown, frame_n))
     children.append(detectKeypointsInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
     children.append(processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n))
