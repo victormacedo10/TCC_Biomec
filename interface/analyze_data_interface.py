@@ -51,10 +51,15 @@ def analyzeDataInterface(video_dropdown, data_dropdown, data_ref, frame_n):
     def resetDATAClicked(b):
         data_added.options = ['None']
         data_added.value = 'None'
+    
+    def saveDATAClicked(b):
+        saveData(video_dropdown.value, list(data_added.options), data_ref, plot_name=output_name, pose='Saggital Right')
 
     add_data = wg.Button(description='Add DATA')
     reset_data = wg.Button(description='Reset DATA')
+    save_data = wg.Button(description='Save DATA')
 
+    output_name = wg.Text(value='',placeholder='File output name',description='Comparison name:',disabled=False)
 
     show = wg.ToggleButtons(options=['Video', 'Metrics', 'Trajectory'],
                                 value='Video',
@@ -111,6 +116,7 @@ def analyzeDataInterface(video_dropdown, data_dropdown, data_ref, frame_n):
         
     hbox_add = wg.HBox([data_dropdown, add_data])
     hbox_remove = wg.HBox([data_added, reset_data])
+    hbox_save = wg.HBox([output_name, save_data])
 
     add_data.on_click(addDATAClicked)
     reset_data.on_click(resetDATAClicked)

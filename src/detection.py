@@ -37,8 +37,9 @@ def singleFrameInference(frame, print_time=True):
     
     # Fix the input Height and get the width according to the Aspect Ratio
     in_height = 368
-    in_width = int((in_height/frame_height)*frame_width)
-
+    #in_width = int((in_height/frame_height)*frame_width)
+    in_width = 368
+    
     inp_blob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (in_width, in_height),
                               (0, 0, 0), swapRB=False, crop=False)
 

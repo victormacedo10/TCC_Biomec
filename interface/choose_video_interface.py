@@ -125,7 +125,7 @@ def chooseVideoInterface(video_dropdown, allvid_dropdown, frame_n):
         else:
             output_path = videos_dir + output_name.value
             print("Saving video at: {}".format(output_path))
-            editVideo(video_dropdown.value, 0, r = slider_range.value, x=width_range.value, 
+            editVideo(video_dropdown.value, allvid_dropdown.value, 0, r = slider_range.value, x=width_range.value, 
                        y=height_range.value, in_height=resolution.value, 
                        save_vid=True, output_path=output_path)
             videos_list = os.listdir(videos_dir)

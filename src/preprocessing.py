@@ -2,7 +2,11 @@ import os
 import cv2
 import time
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+from pykalman import KalmanFilter
+from numpy import ma
+import json
 from support import *
 from detection import *
 
@@ -45,9 +49,73 @@ def organizeBiggestPerson(personwise_keypoints, keypoints_list):
         n += 1
     return sorted_keypoints
 
-def fillMissingPoints(main_keypoints, last_keypoints):
-    main_keypoints = np.where(main_keypoints<0, last_keypoints, main_keypoints)
-    return main_keypoints
+def fillwLast(keypoints_vector):
+    for n in range(len(keypoints_vector)):
+        if(n>0):
+            keypoints_vector[n] = np.where(keypoints_vector[n]<0, keypoints_vector[n-1], keypoints_vector[n])
+    return keypoints_vector
+
+def missingDataKalman(X, t):
+    X = ma.where(X==-1, ma.masked, X)
+
+    dt = t[2] - t[1]
+
+    F = [[1,  dt,   0.5*dt*dt], 
+        [0,   1,          dt],
+        [0,   0,           1]]  
+
+    H = [1, 0, 0]
+
+    Q = [[   1,     0,     0], 
+        [   0,  1e-4,     0],
+        [   0,     0,  1e-6]] 
+
+    R = [0.01]
+    
+    if(X[0]==ma.masked):
+        X0 = [0,0,0]
+    else:
+        X0 = [X[0],0,0]
+    P0 = [[ 10,    0,   0], 
+        [  0,    1,   0],
+        [  0,    0,   1]]
+    n_tsteps = len(t)
+    n_dim_state = 3
+    filtered_state_means = np.zeros((n_tsteps, n_dim_state))
+    filtered_state_covariances = np.zeros((n_tsteps, n_dim_state, n_dim_state))
+    kf = KalmanFilter(transition_matrices = F, 
+                    observation_matrices = H, 
+                    transition_covariance = Q, 
+                    observation_covariance = R, 
+                    initial_state_mean = X0, 
+                    initial_state_covariance = P0)
+    for t in range(n_tsteps):
+        if t == 0:
+            filtered_state_means[t] = X0
+            filtered_state_covariances[t] = P0
+        else:
+            filtered_state_means[t], filtered_state_covariances[t] = (
+            kf.filter_update(filtered_state_means[t-1],
+                            filtered_state_covariances[t-1],
+                            observation = X[t]))
+    return filtered_state_means[:, 0] 
+
+def fillwKalman(keypoints_vector, t):
+    for i in range(keypoints_vector.shape[1]):
+        keypoints_vector[:,i,0] = missingDataKalman(keypoints_vector[:, i, 0], t)
+    return keypoints_vector
+
+def missingDataInterpolation(X, interp='cubic'):
+    X = np.where(X==-1, np.nan, X)
+    X = pd.Series(X)
+    X_out = X.interpolate(limit_direction='both', kind=interp)
+    return X_out
+
+def fillwInterp(keypoints_vector):
+    for i in range(keypoints_vector.shape[1]):
+        keypoints_vector[:,i,0] = missingDataInterpolation(keypoints_vector[:, i, 0])
+        keypoints_vector[:,i,1] = missingDataInterpolation(keypoints_vector[:, i, 1])
+    return keypoints_vector.astype(int)
 
 def removePairs(main_keypoints, joint_pairs):
     out_keypoints = -1*np.ones(main_keypoints.shape)
@@ -67,8 +135,6 @@ def removePairsFile(main_keypoints, joints):
 
 def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, miss_points):
     
-    print("Saving...")
-    
     if(video_name_ext == "None"):
         print("No video found")
         return
@@ -81,7 +147,8 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
         os.makedirs(file_dir)
     file_path = file_dir + file_name
     metadata, data = readFrameJSON(file_path, frame_n=0)
-    n_frames, fps = metadata["n_frames"], metadata["fps"]
+    n_frames = metadata["n_frames"]
+    fps = metadata["fps"]
     frame_height, frame_width = metadata["frame_height"], metadata["frame_width"]
     
     output_path = file_dir + output_name + ".data"
@@ -101,7 +168,9 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
     with open(output_path, 'w') as f:
         f.write(json.dumps(metadata))
         f.write('\n')
-    
+
+    keypoints_vector = np.zeros((n_frames, len(joints), 2))
+    print("Organizing data...")
     for n in range(n_frames):
         t = time.time()
         _, data = readFrameJSON(file_path, frame_n=n)
@@ -124,18 +193,26 @@ def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, 
         sorted_keypoints = organizeBiggestPerson(personwise_keypoints, keypoints_list)
         main_keypoints = sorted_keypoints[0]
 
-        if(miss_points == 'Fill w/ Last'):
-            if (n>0):
-                main_keypoints = fillMissingPoints(main_keypoints, last_keypoints)
-            last_keypoints = np.copy(main_keypoints)
-
-        # elif(miss_points == 'Fill w/ Kalman'):
-        #     if (n>0):
-        #         main_keypoints = fillMissingPoints(main_keypoints, last_keypoints)
-        #     last_keypoints = np.copy(main_keypoints)
-
         main_keypoints = removePairsFile(main_keypoints, joints)
+        keypoints_vector[n] = main_keypoints
+        time_taken = time.time() - t
+        print("[{0:d}/{1:d}] {2:.1f} seconds/frame".format(n+1, n_frames, time_taken), end="\r")
 
+    if(miss_points == 'Fill w/ Last'):
+        print("Interpolating Last...")
+        keypoints_vector = fillwLast(keypoints_vector)
+    elif(miss_points == 'Fill w/ Kalman'):
+        print("Interpolating Kalman...")
+        t = np.linspace(0, len(keypoints_vector)/fps, len(keypoints_vector))
+        keypoints_vector = fillwKalman(keypoints_vector, t)
+    elif(miss_points == 'Fill w/ Interp'):
+        print("Interpolating Interpolation...")
+        keypoints_vector = fillwInterp(keypoints_vector)
+
+    print("Saving...")
+    for n in range(n_frames):
+        t = time.time()
+        main_keypoints = keypoints_vector[n]
         file_data = {
             'keypoints': main_keypoints.tolist()
         }

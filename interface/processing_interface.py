@@ -22,7 +22,11 @@ keypoints_mapping = ['Nose', 'Neck', 'Right Sholder', 'Right Elbow', 'Right Wris
 
 def processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
     def onPosProcessClicked(b): 
-        saveProcessedFile(video_dropdown.value, data_dropdown.value, output_name.value, 
+        if(option.value=='Online'):
+            saveProcessedFileOnline(video_dropdown.value, data_dropdown.value, output_name.value, 
+                        function.value, summary.value)
+        elif(option.value=='All Data'):
+            saveProcessedFileAll(video_dropdown.value, data_dropdown.value, output_name.value, 
                         function.value, summary.value)
 
     def posprocessView(video_name, file_name, frame_n): 
@@ -56,8 +60,13 @@ def processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
         if names.endswith(".py"):
             py_list.append(names)
     function = wg.Dropdown(options=py_list,
+                        value='post_processing_template.py',
                         description='Algorithm:',
                         disabled=False)
+
+    option = wg.RadioButtons(options=['Online', 'All Data', 'Batch'],value='Online',
+                                 rows=3,description='Options',disabled=False,
+                                 layout=wg.Layout(display='flex',flex_flow='line',width='90%'))
 
     frame_slider = wg.IntSlider()
     wg.jslink((frame_n, 'value'), (frame_slider, 'value'))
@@ -70,13 +79,15 @@ def processingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n):
 
     posprocess_vid.on_click(onPosProcessClicked)
     
+    batch = wg.IntSlider(value=1,min=1,max=100,step=1,description='Batch size',disabled=False)
+
     video_display = wg.interactive_output(posprocessView, {"video_name": video_dropdown,
                                                      "file_name": data_dropdown,
                                                      "frame_n": frame_n})
     
     hbox_input = wg.HBox([video_dropdown, data_dropdown])
     hbox_play = wg.HBox([frame_n, frame_slider])
-    vbox_config = wg.VBox([function, output_name, summary, posprocess_vid]) 
+    vbox_config = wg.VBox([function, option, batch, output_name, summary, posprocess_vid]) 
     vbox_vid = wg.VBox([video_display, hbox_play])
     hbox_res = wg.HBox([vbox_vid, vbox_config])
     vbox_res = wg.VBox([hbox_input, hbox_res])

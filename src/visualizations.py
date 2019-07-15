@@ -148,6 +148,8 @@ def keypointsDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3, color 
         B = tuple(main_keypoints[b_idx].astype(int))
         if (-1 in A) or (-1 in B):
             continue
+        if (0 in A) or (0 in B):
+            continue
         if(color == -1):
             cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors[i], thickness, cv2.LINE_AA)
         else:

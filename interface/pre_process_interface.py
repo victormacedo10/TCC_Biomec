@@ -172,7 +172,7 @@ def preProcessingInterface(video_dropdown, json_dropdown, data_dropdown, frame_n
     p15_17 = wg.ToggleButton(value=False, description=pairs_mapping[16],disabled=False,
                          layout=wg.Layout(display='flex',flex_flow='line',align_items='flex-start',
                                           justify_content='flex-start',width='60%'))
-    miss_points = wg.RadioButtons(options=['None', 'Fill w/ Last'],value='None',
+    miss_points = wg.RadioButtons(options=['None', 'Fill w/ Last', 'Fill w/ Kalman', 'Fill w/ Interp'],value='None',
                                  rows=4,description='',disabled=False,
                                  layout=wg.Layout(display='flex',flex_flow='line',width='90%'))
     frame_slider = wg.IntSlider()

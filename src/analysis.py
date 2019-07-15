@@ -24,6 +24,8 @@ colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,10
 keypoints_mapping = ['Nose', 'Neck', 'Right Sholder', 'Right Elbow', 'Right Wrist', 'Left Sholder', 
                     'Left Elbow', 'Left Wrist', 'Right Hip', 'Right Knee', 'Right Ankle', 'Left Hip', 
                     'Left Knee', 'Left Ankle', 'Right Eye', 'Left Eye', 'Right Ear', 'Left Ear']
+sr = ['Right Sholder', 'Right Elbow', 'Right Wrist', 'Right Hip', 'Right Knee', 'Right Ankle']
+sl = ['Left Sholder', 'Left Elbow', 'Left Wrist', 'Left Hip', 'Left Knee', 'Left Ankle']
 
 km = ['Nose', 'Neck', 'RS', 'RE', 'RW', 'LS', 
                     'E', 'LW', 'RH', 'RK', 'RA', 'LH', 
@@ -32,12 +34,35 @@ km = ['Nose', 'Neck', 'RS', 'RE', 'RW', 'LS',
 videos_dir = "../Videos/"
 data_dir = "../Data/"
 
-def plotTrajectory(video_name, file_names, file_ref, point, coord='x'):
+def saveData(video_name, file_names, file_ref, plot_name='teste', pose='Saggital Right'):
+    if pose=='Saggital Right':
+        for p in sr:
+            plotTrajectory(video_name, file_names, file_ref, p, 'x', plot_name + 'ptx' + p, saveplot=True)
+            plotTrajectory(video_name, file_names, file_ref, p, 'y', plot_name + 'pty' + p, saveplot=True)
+
+            showMetrics(video_name, file_names, file_ref, p, error_type='Error Graph', def_error=False, 
+                        plot_name=plot_name + 'epj' + p, saveplot=True)
+    showMetrics(video_name, file_names, file_ref, p, error_type='Error Graph', def_error=False, 
+                        plot_name=plot_name + 'et', saveplot=True)
+    showMetrics(video_name, file_names, file_ref, p, error_type='Error DF', def_error=True, 
+                        plot_name=plot_name + 'dfe', saveplot=True)
+    showMetrics(video_name, file_names, file_ref, p, error_type='False Negatives DF', def_error=True, 
+                        plot_name=plot_name + 'dffn', saveplot=True)
+
+def plotTrajectory(video_name, file_names, file_ref, point, coord='x', plot_name='teste', saveplot=False):
     video_name = (video_name).split(sep='.')[0]
     file_dir = data_dir + video_name + '/'
     if not os.path.exists(file_dir):
         os.makedirs(file_dir)
-    file_path = file_dir + file_names[0]
+
+    if(file_names[0]=='None' and file_ref=='None'):
+        print("No file selected")
+        return
+    elif(file_names[0]=='None'):
+        file_path = file_dir + file_ref
+    else:
+        file_path = file_dir + file_names[0]
+
     metadata, keypoints = readFrameDATA(file_path, frame_n=0)
     n_frames, fps = metadata["n_frames"], metadata["fps"]
     joint_pairs = metadata["joint_pairs"]
@@ -63,17 +88,18 @@ def plotTrajectory(video_name, file_names, file_ref, point, coord='x'):
             file_path = file_dir + file_ref
             _, keypoints = readAllFramesDATA(file_path)
             keypoints = np.where(keypoints==-1, np.nan, keypoints)
-            plt.plot(keypoints[:, point_idx, 0], label="Reference")
+            plt.plot(keypoints[:, point_idx, 0], label="Referência")
         for file_name in file_names:
             file_path = file_dir + file_name
             _, keypoints = readAllFramesDATA(file_path)
             keypoints = np.where(keypoints==-1, np.nan, keypoints)
             plt.plot(keypoints[:, point_idx, 0], label=(file_name).split(sep='.')[0])
-        plt.legend()
+            plt.legend()
     else:
-        plt.figure(figsize=[9,6])
-        plt.title("Comparison Y {}".format(point))
-        plt.grid(True)
+        if not saveplot:
+            plt.figure(figsize=[9,6])
+            plt.title("Comparison Y {}".format(point))
+            plt.grid(True)
         if(file_ref != 'None'):
             file_path = file_dir + file_ref
             _, keypoints = readAllFramesDATA(file_path)
@@ -86,9 +112,14 @@ def plotTrajectory(video_name, file_names, file_ref, point, coord='x'):
             plt.plot(keypoints[:, point_idx, 1], label=(file_name).split(sep='.')[0])
         plt.legend()
 
-    plt.show()
+    if saveplot:
+        plt.savefig(data_dir + video_name + '/' + plot_name + '.png')
+        with open(data_dir + video_name + '/' + plot_name + '.json', "w") as write_file:
+            json.dump(keypoints.tolist(), write_file)
+    else:
+        plt.show()
 
-def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def_error=False):
+def showMetrics(video_name, file_names, file_ref, point, error_type='Error Graph', def_error=False, plot_name='teste', saveplot=False):
     if(file_names[0]=='None'):
         print('No file selected')
         return
@@ -182,7 +213,13 @@ def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def
 
     if(error_type=='Error Graph'):
         plt.legend()
-        plt.show()
+        if saveplot:
+            plt.savefig(data_dir + video_name + '/' + plot_name + '.png')
+            with open(data_dir + video_name + '/' + plot_name + '.json', "w") as write_file:
+                json.dump(Et_keypoints_vec.tolist(), write_file)
+                json.dump(Et_vec.tolist(), write_file)
+        else:
+            plt.show()
     elif(error_type=='Error DF'):
         col = []
         for joint in joints:
@@ -193,7 +230,14 @@ def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def
             row.append((file_name).split(sep='.')[0])
         df = pd.DataFrame(data=data,columns=col, index=row)
         with pd.option_context('display.float_format', '{:0.2f}'.format):
-            display(df)
+            if saveplot:
+                latex = df.to_latex(index=False)
+                file1 = open(data_dir + video_name + '/' + plot_name.tabtex, "w") 
+                file1.write(latex) 
+                file1.close()
+            else:
+                display(df)
+                
     elif(error_type=='False Negatives DF'):
         col = []
         for joint in joints:
@@ -204,4 +248,10 @@ def showMetrics(video_name, file_names, file_ref, point, error_type='Graph', def
             row.append((file_name).split(sep='.')[0])
         df = pd.DataFrame(data=data_fn,columns=col, index=row)
         with pd.option_context('display.float_format', '{:0.0f}'.format):
-            display(df)
+            if saveplot:
+                latex = df.to_latex(index=False)
+                file1 = open(data_dir + video_name + '/' + plot_name.tabtex, "w") 
+                file1.write(latex) 
+                file1.close()
+            else:
+                display(df)
