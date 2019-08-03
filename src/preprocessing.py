@@ -134,7 +134,7 @@ def removePairsFile(main_keypoints, joints):
     return np.array(out_keypoints)
 
 def saveJointFile(video_name_ext, file_name, output_name, joint_pairs, summary, miss_points):
-    
+    print(joint_pairs)
     if(video_name_ext == "None"):
         print("No video found")
         return

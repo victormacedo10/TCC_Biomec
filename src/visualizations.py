@@ -27,9 +27,74 @@ colors_2 = [[0,255,0], [255,0,0], [0,0,255], [0,255,255],[255,255,0],
          [100,255,200], [255,100,200], [100,200,255], [200,100,255],
          [200,200,0], [200,0,200],[0,200,200]]
 
-keypoints_mapping = ['Nose', 'Neck', 'Right Sholder', 'Right Elbow', 'Right Wrist', 'Left Sholder', 
+indep_colors = [[1,0,0], [0,1,0], [0,0,1], 
+            [0,1,1],[0,0.25,0.5], [1, 0, 0.75], 
+            [1,1,1], [0, 0.5, 1], [1, 0.75, 0],
+            [0.5, 0.5, 0.5], [0, 0.25, 0],[0.1, 0.1, 0],
+            [0, 0, 0.25], [0.1, 0, 0.1], [0.6, 1, 0.6],
+            [0.5, 0, 0.25], [0.6, 1, 1], [1, 0.75, 1]]
+
+keypoints_mapping = ['Nose', 'Neck', 'Right Shoulder', 'Right Elbow', 'Right Wrist', 'Left Shoulder', 
                     'Left Elbow', 'Left Wrist', 'Right Hip', 'Right Knee', 'Right Ankle', 'Left Hip', 
                     'Left Knee', 'Left Ankle', 'Right Eye', 'Left Eye', 'Right Ear', 'Left Ear']
+
+def visualizeColoredVideo(video_name, file_name, thickness=3, joint_names = [-1]):
+    if(video_name == "None"):
+        print("No video found")
+        return
+    if(file_name == "None"):
+        print("No DATA found")
+        return
+    video_name = (video_name).split(sep='.')[0]
+    file_dir = data_dir + video_name + '/'
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+    file_path = file_dir + file_name
+    metadata, keypoints_vector = readAllFramesDATA(file_path)
+
+    video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]
+    
+    joint_pairs = metadata["joint_pairs"]
+    pairs = []
+    for j in joint_pairs:
+        pairs.append(pose_pairs[j])
+    joints = np.unique(pairs)
+
+    image, _, _ = getFrame(video_name_ext[0], 0)
+    frame = np.zeros(image.shape)
+    joint_name = "Neck"
+    j_list = []
+    if(joint_names[0] == -1):
+        for i in range(len(joints)):
+            j_list.append(i)
+    else:
+        for joint_name in joint_names:
+            j_list.append(joints.tolist().index(keypoints_mapping.index(joint_name)))
+
+    for i in range(1, len(keypoints_vector)):
+        for j in range(keypoints_vector.shape[1]):
+            if(j not in j_list):
+                continue    
+            A = tuple(keypoints_vector[i-1,j,:].astype(int))
+            B = tuple(keypoints_vector[i,j,:].astype(int))
+            if (-1 in A) or (-1 in B):
+                continue
+            if (0 in A) or (0 in B):
+                continue
+            cv2.line(frame, (A[0], A[1]), (B[0], B[1]), indep_colors[j], thickness, cv2.LINE_AA)
+            if(i==1):
+                print(indep_colors[j])
+    
+    showFrame(frame)
+    return frame
+
+def keypointsDATAtoFrame(image, keypoints, thickness=3, color = -1):
+    for i in range(len(keypoints)):
+        A = tuple(keypoints[i].astype(int))
+        if (-1 in A) or (0 in A):
+            continue
+        cv2.circle(image, (A[0], A[1]), thickness, colors_2[i], -1)
+    return image
 
 def visualizePoints(keypoints_list, personwise_keypoints, person, joint_n):
     index = int(personwise_keypoints[person][joint_n])
@@ -134,7 +199,7 @@ def visualizeSingleKeypoints(frame, sorted_keypoints, joint_pairs):
     plt.imshow(frame_out[:,:,[2,1,0]])
     plt.axis("off")
 
-def keypointsDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3, color = -1):
+def poseDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3, color = -1):
     pairs = []
     for j in joint_pairs:
         pairs.append(pose_pairs[j])
@@ -192,7 +257,7 @@ def keypointsFromDATA(video_name, file_name, frame_n=0):
     video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]
     
     image, _, _ = getFrame(video_name_ext[0], frame_n)
-    frame = keypointsDATAtoFrame(image, keypoints, joint_pairs)
+    frame = poseDATAtoFrame(image, keypoints, joint_pairs)
     showFrame(frame)
 
 def keypointsFromDATACompare(video_name, file_names = ['None'], file_ref = ['None'], frame_n=0,
@@ -219,7 +284,7 @@ def keypointsFromDATACompare(video_name, file_names = ['None'], file_ref = ['Non
         if show_point:
             frame = pointDATAtoFrame(frame, keypoints, joint_pairs, point, thickness, color=0)
         else:
-            frame = keypointsDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=0)
+            frame = poseDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=0)
 
     if(file_names[0] == "None"):
         showFrame(frame)
@@ -232,7 +297,7 @@ def keypointsFromDATACompare(video_name, file_names = ['None'], file_ref = ['Non
         if show_point:
             frame = pointDATAtoFrame(frame, keypoints, joint_pairs, point, thickness, color=i+1)
         else:
-            frame = keypointsDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=i+1)
+            frame = poseDATAtoFrame(frame, keypoints, joint_pairs, thickness, color=i+1)
     
     showFrame(frame)
     
@@ -322,7 +387,8 @@ def heatmapFromJSON(video_name, file_name, joint_n, threshold, alpha, binary,
         #plt.colorbar()
         plt.axis("off")
         
-def showFrame(frame):
+def showFrame(frame, save=False):
     plt.figure(figsize=[9,6])
     plt.imshow(frame[:,:,[2,1,0]])
     plt.axis("off")
+    plt.show()
