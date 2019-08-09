@@ -6,57 +6,9 @@ import os
 from support import *
 from detection import *
 from preprocessing import *
-import parameters
+from parameters import *
 
-def visualizeColoredVideo(video_name, file_name, thickness=3, joint_names = [-1]):
-    if(video_name == "None"):
-        print("No video found")
-        return
-    if(file_name == "None"):
-        print("No DATA found")
-        return
-    video_name = (video_name).split(sep='.')[0]
-    file_dir = data_dir + video_name + '/'
-    if not os.path.exists(file_dir):
-        os.makedirs(file_dir)
-    file_path = file_dir + file_name
-    metadata, keypoints_vector = readAllFramesDATA(file_path)
-
-    video_name_ext = [filename for filename in os.listdir(videos_dir) if filename.startswith(metadata["video_name"])]
-    
-    joint_pairs = metadata["joint_pairs"]
-    pairs = []
-    for j in joint_pairs:
-        pairs.append(pose_pairs[j])
-    joints = np.unique(pairs)
-
-    image, _, _ = getFrame(video_name_ext[0], 0)
-    frame = np.zeros(image.shape)
-    joint_name = "Neck"
-    j_list = []
-    if(joint_names[0] == -1):
-        for i in range(len(joints)):
-            j_list.append(i)
-    else:
-        for joint_name in joint_names:
-            j_list.append(joints.tolist().index(keypoints_mapping.index(joint_name)))
-
-    for i in range(1, len(keypoints_vector)):
-        for j in range(keypoints_vector.shape[1]):
-            if(j not in j_list):
-                continue    
-            A = tuple(keypoints_vector[i-1,j,:].astype(int))
-            B = tuple(keypoints_vector[i,j,:].astype(int))
-            if (-1 in A) or (-1 in B):
-                continue
-            if (0 in A) or (0 in B):
-                continue
-            cv2.line(frame, (A[0], A[1]), (B[0], B[1]), indep_colors[j], thickness, cv2.LINE_AA)
-            if(i==1):
-                print(indep_colors[j])
-    
-    showFrame(frame)
-    return frame
+colors_t = [[0,255,0], [0,0,255], [0,0,0], [255,255,255]]
 
 def keypointsDATAtoFrame(image, keypoints, thickness=3, color = -1):
     for i in range(len(keypoints)):
@@ -169,26 +121,54 @@ def visualizeSingleKeypoints(frame, sorted_keypoints, joint_pairs):
     plt.imshow(frame_out[:,:,[2,1,0]])
     plt.axis("off")
 
-def poseDATAtoFrame(frame, main_keypoints, joint_pairs, thickness=3, color = -1):
+def rectAreatoFrame(frame, pose_keypoints):
+    try:
+        print(pose_keypoints.shape[0])
+        for n in range(pose_keypoints.shape[0]):
+            area = rectangularArea(pose_keypoints[n,:,:2])
+            max_x , min_x, max_y, min_y = getVertices(pose_keypoints[n,:,:2])
+            print(max_x , min_x, max_y, min_y)
+            cv2.rectangle(frame, (min_y, min_x), (max_y, max_x), colors_t[n], 2, 1)
+            print("{0}: {1}".format(n, area))
+        return frame
+    except IndexError:
+        return frame
+
+def poseDATAtoFrame(frame, pose_keypoints, persons, model, joint_pairs, thickness=3, color = -1):
+    if model == "BODY_25":
+        pose_pairs_MODEL = pose_pairs_BODY_25
+    elif model == "BODY_21":
+        pose_pairs_MODEL = pose_pairs_BODY_21
+    elif model == "COCO":
+        pose_pairs_MODEL = pose_pairs_COCO
+    if joint_pairs == -1:
+        joint_pairs = np.arange(pose_pairs_MODEL.shape[0])
+    
+    try:
+        if persons == -1:
+            persons = np.arange(pose_keypoints.shape[0])
+
+    except IndexError:
+        return frame
+
     pairs = []
     for j in joint_pairs:
-        pairs.append(pose_pairs[j])
+        pairs.append(pose_pairs_MODEL[j])
     joints = np.unique(pairs)
-
-    for i in joint_pairs:
-        pose_pairs[i][0]
-        a_idx = (joints.tolist()).index(pose_pairs[i][0])
-        b_idx = (joints.tolist()).index(pose_pairs[i][1])
-        A = tuple(main_keypoints[a_idx].astype(int))
-        B = tuple(main_keypoints[b_idx].astype(int))
-        if (-1 in A) or (-1 in B):
-            continue
-        if (0 in A) or (0 in B):
-            continue
-        if(color == -1):
-            cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors[i], thickness, cv2.LINE_AA)
-        else:
-            cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_2[color], thickness, cv2.LINE_AA)
+    
+    for n in persons:
+        for i in joint_pairs:
+            pose_pairs_MODEL[i][0]
+            a_idx = (joints.tolist()).index(pose_pairs_MODEL[i][0])
+            b_idx = (joints.tolist()).index(pose_pairs_MODEL[i][1])
+            A = tuple(pose_keypoints[n][a_idx][:2].astype(int))
+            B = tuple(pose_keypoints[n][b_idx][:2].astype(int))
+            if (0 in A) or (0 in B):
+                continue
+            if(color == -1):
+                cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_25[i], thickness, cv2.LINE_AA)
+            else:
+                cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_2[color], thickness, cv2.LINE_AA)
     return frame
 
 def pointDATAtoFrame(frame, main_keypoints, joint_pairs, point, thickness=3, color = -1):
