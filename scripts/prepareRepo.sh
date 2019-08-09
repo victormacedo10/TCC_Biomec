@@ -7,8 +7,8 @@ HAND_FOLDER="hand/"
 
 # ------------------------- POSE MODELS -------------------------
 # Body (COCO)
-COCO_FOLDER=${POSE_FOLDER}"coco/"
-COCO_MODEL=${COCO_FOLDER}"pose_iter_440000.caffemodel"
+# COCO_FOLDER=${POSE_FOLDER}"coco/"
+# COCO_MODEL=${COCO_FOLDER}"pose_iter_440000.caffemodel"
 
 cd ../
 mkdir Videos
@@ -17,5 +17,5 @@ mkdir Models
 mkdir Others
 
 cd Models
-wget -c ${OPENPOSE_URL}${COCO_MODEL} -P ${COCO_FOLDER}
+# wget -c ${OPENPOSE_URL}${COCO_MODEL} -P ${COCO_FOLDER}
 
