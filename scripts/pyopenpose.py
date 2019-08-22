@@ -7,8 +7,10 @@ from sys import platform
 import argparse
 import time
 
-# Import Openpose
+# Import Libs
 openpose_path = '/home/megasxlr/VictorM/openpose/'
+repo_path = '/home/megasxlr/VictorM/TCC_Biomec/'
+videos_dir = 'Videos/'
 
 try:
     # Change these variables to point to the correct folder (Release/x64 etc.) 
@@ -47,7 +49,12 @@ try:
     opWrapper.start()
     datum = op.Datum()
 
-    cap = cv2.VideoCapture(0)
+    video_name = "Victor"
+    video_name_ext = video_name + ".mp4"
+    video_path = repo_path + videos_dir + video_name_ext
+    # video_path = 0
+
+    cap = cv2.VideoCapture(video_path)
     
     if(cap.isOpened() == False):
         print("Error opening video stream or file")

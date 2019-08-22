@@ -30,21 +30,24 @@ colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,10
          [0,0,0], [0,0,0], [0,255,0], [0,255,0]]
 
 def organizeBiggestPerson(pose_keypoints):
-    biggest_dict = {}
-    sorted_keypoints = np.zeros(pose_keypoints.shape)
-    print(pose_keypoints)
-    for n in range(pose_keypoints.shape[0]):
-        area = rectangularArea(pose_keypoints[n,:,:2])
-        print(area)
-        biggest_dict[area] = n
-    print("dict: {}".format(biggest_dict))
-    biggest_values = sorted(biggest_dict, reverse=True) 
-    print("values: {}".format(biggest_values))
-    n = 0
-    for i in biggest_values:
-        index = int(biggest_dict[i])
-        sorted_keypoints[n] = pose_keypoints[index]
-        n += 1
+    try:
+        biggest_dict = {}
+        sorted_keypoints = np.zeros(pose_keypoints.shape)
+        # print(pose_keypoints)
+        for n in range(pose_keypoints.shape[0]):
+            area = rectangularArea(pose_keypoints[n,:,:2])
+            # print(area)
+            biggest_dict[area] = n
+        # print("dict: {}".format(biggest_dict))
+        biggest_values = sorted(biggest_dict, reverse=True) 
+        # print("values: {}".format(biggest_values))
+        n = 0
+        for i in biggest_values:
+            index = int(biggest_dict[i])
+            sorted_keypoints[n] = pose_keypoints[index]
+            n += 1
+    except:
+        return pose_keypoints
     return sorted_keypoints
 
 def fillwLast(keypoints_vector):
@@ -115,13 +118,11 @@ def fillwInterp(keypoints_vector):
         keypoints_vector[:,i,1] = missingDataInterpolation(keypoints_vector[:, i, 1])
     return keypoints_vector.astype(int)
 
-
 def selectJoints(pose_keypoints, old_joints, new_joints):
-    out_keypoints = -1*np.ones(main_keypoints.shape)
-    pairs = []
-    for j in joint_pairs:
-        pairs.append(pose_pairs[j])
-    n = np.unique(pairs)
-    for i in n:
-        out_keypoints[i] = main_keypoints[i]
+    try:
+        out_keypoints = np.zeros([pose_keypoints.shape[0], len(new_joints), pose_keypoints.shape[2]])
+        for joint in new_joints:
+            out_keypoints[:, new_joints.index(joint), :] = pose_keypoints[:, old_joints.index(joint), :]
+    except:
+        return pose_keypoints
     return out_keypoints

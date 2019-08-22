@@ -118,10 +118,6 @@ def angle3pt(a, b, c):
     return ang
 
 def rectangularArea(person):
-    max_x , min_x, max_y, min_y = getVertices(person)
-    return (max_x - min_x)*(max_y - min_y)
-
-def getVertices(person):
     try:
         # print(person)
         max_x = max(person[:, 1])
@@ -130,8 +126,5 @@ def getVertices(person):
         min_y = min([n for n in person[:, 0] if n>0])
     except:
         print(person)
-        max_x = max(person[:, 1])
-        min_x = min([n for n in person[:, 1] if n>0])
-        max_y = max(person[:, 0])
-        min_y = min([n for n in person[:, 0] if n>0])
-    return max_x , min_x, max_y, min_y
+        return 0
+    return (max_x - min_x)*(max_y - min_y)
