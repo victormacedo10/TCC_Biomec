@@ -8,7 +8,7 @@ from detection import *
 from preprocessing import *
 from parameters import *
 
-colors_t = [[0,255,0], [0,0,255], [0,0,0], [255,255,255]]
+colors_t = [(0,255,0), (0,0,255), (0,0,0), (255,255,255)]
 
 def keypointsDATAtoFrame(image, keypoints, thickness=3, color = -1):
     for i in range(len(keypoints)):
@@ -62,22 +62,13 @@ def rectAreatoFrame(frame, pose_keypoints):
             area = rectangularArea(pose_keypoints[n,:,:2])
             max_x , min_x, max_y, min_y = getVertices(pose_keypoints[n,:,:2])
             print(max_x , min_x, max_y, min_y)
-            cv2.rectangle(frame, (min_y, min_x), (max_y, max_x), colors_t[n], 2, 1)
+            cv2.rectangle(frame, (min_y, min_x), (max_y, max_x), thickness = 2)
             print("{0}: {1}".format(n, area))
         return frame
     except IndexError:
         return frame
 
-def poseDATAtoFrame(frame, pose_keypoints, persons, model, joint_pairs, thickness=3, color = -1):
-    if model == "BODY_25":
-        pose_pairs_MODEL = pose_pairs_BODY_25
-    elif model == "BODY_21":
-        pose_pairs_MODEL = pose_pairs_BODY_21
-    elif model == "COCO":
-        pose_pairs_MODEL = pose_pairs_COCO
-    if joint_pairs == -1:
-        joint_pairs = np.arange(pose_pairs_MODEL.shape[0])
-    
+def poseDATAtoFrame(frame, pose_keypoints, persons, joint_names, pairs_names, thickness=3, color = -1):
     try:
         if persons == -1:
             persons = np.arange(pose_keypoints.shape[0])
@@ -85,27 +76,27 @@ def poseDATAtoFrame(frame, pose_keypoints, persons, model, joint_pairs, thicknes
     except IndexError:
         return frame
 
-    pairs = []
-    for j in joint_pairs:
-        pairs.append(pose_pairs_MODEL[j])
-    joints = np.unique(pairs)
-    
-    for n in persons:
-        for i in joint_pairs:
-            pose_pairs_MODEL[i][0]
-            a_idx = (joints.tolist()).index(pose_pairs_MODEL[i][0])
-            b_idx = (joints.tolist()).index(pose_pairs_MODEL[i][1])
-            A = tuple(pose_keypoints[n][a_idx][:2].astype(int))
-            B = tuple(pose_keypoints[n][b_idx][:2].astype(int))
-            if (0 in A) or (0 in B):
-                continue
-            if(color == -1):
-                cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_25[i], thickness, cv2.LINE_AA)
-            else:
-                cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_2[color], thickness, cv2.LINE_AA)
+    try:
+        for n in persons:
+            i = 0
+            for pair in pairs_names:
+                A_idx = joint_names.index(pair[0])
+                B_idx = joint_names.index(pair[1])
+                A = tuple(pose_keypoints[n][A_idx][:2].astype(int))
+                B = tuple(pose_keypoints[n][B_idx][:2].astype(int))
+                if (0 in A) or (0 in B):
+                    i+=1
+                    continue
+                if(color == -1):
+                    cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_25[i], thickness, cv2.LINE_AA)
+                else:
+                    cv2.line(frame, (A[0], A[1]), (B[0], B[1]), colors_2[color], thickness, cv2.LINE_AA)
+                i+=1
+    except IndexError:
+        return frame
     return frame
 
-def showFrame(frame, save=False):
+def showFrame(frame):
     plt.figure(figsize=[9,6])
     plt.imshow(frame[:,:,[2,1,0]])
     plt.axis("off")

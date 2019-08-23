@@ -1,9 +1,9 @@
 import numpy as np
 
-proto_file = "../Models/Openpose/coco/pose_deploy_linevec.prototxt"
-weights_file = "../Models/Openpose/coco/pose_iter_440000.caffemodel"
-videos_dir = "../Videos/"
-data_dir = "../Data/"
+proto_file = "Models/Openpose/coco/pose_deploy_linevec.prototxt"
+weights_file = "Models/Openpose/coco/pose_iter_440000.caffemodel"
+videos_dir = "Videos/"
+data_dir = "Data/"
 
 colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255],
          [0,255,0], [255,200,100], [255,0,255], [0,255,0], [255,200,100], [255,0,255],
@@ -40,6 +40,23 @@ keypoints_mapping_BODY_25 = ['Nose', 'Neck', 'Right Shoulder', 'Right Elbow', 'R
                     'Left Knee', 'Left Ankle', 'Right Eye', 'Left Eye', 'Right Ear', 'Left Ear', 'Left Big Toe', 
                     'Left Small Toe', 'Left Heel', 'Right Big Toe', 'Right Small Toe', 'Right Heel', 'Background']
 
+SL_mapping = ['Left Shoulder', 'Left Elbow', 'Left Wrist', 'Left Hip', 'Left Knee', 'Left Ankle']
+SR_mapping = ['Right Shoulder', 'Right Elbow', 'Right Wrist', 'Right Hip', 'Right Knee', 'Right Ankle']
+
+SL_pairs = [['Left Shoulder', 'Left Elbow'], ['Left Elbow', 'Left Wrist'], ['Left Shoulder', 'Left Hip'], 
+            ['Left Hip', 'Left Knee'], ['Left Knee', 'Left Ankle']]
+SR_pairs = [['Right Shoulder', 'Right Elbow'], ['Right Elbow', 'Right Wrist'], ['Right Shoulder', 'Right Hip'], 
+            ['Right Hip', 'Right Knee'], ['Right Knee', 'Right Ankle']]
+
+BODY_25_pairs = [['Neck', 'Right Shoulder'], ['Neck', 'Left Shoulder'], ['Right Shoulder', 'Right Elbow'], 
+                ['Right Elbow', 'Right Wrist'], ['Left Shoulder', 'Left Elbow'], ['Left Elbow', 'Left Wrist'], 
+                ['Neck', 'Middle Hip'], ['Middle Hip', 'Right Hip'], ['Right Hip', 'Right Knee'], 
+                ['Left Hip', 'Left Knee'], ['Middle Hip', 'Left Hip'], ['Right Knee', 'Right Ankle'], 
+                ['Right Ankle', 'Right Heel'], ['Right Ankle', 'Right Big Toe'], ['Right Big Toe', 'Right Small Toe'], 
+                ['Left Knee', 'Left Ankle'], ['Left Ankle', 'Left Heel'], ['Left Ankle', 'Left Big Toe'], 
+                ['Left Big Toe', 'Left Small Toe'], ['Neck', 'Nose'], ['Nose', 'Right Eye'], ['Nose', 'Left Eye'], 
+                ['Right Eye', 'Right Ear'], ['Left Eye', 'Left Ear']]
+
 pose_pairs_COCO = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
             [1,8], [8,9], [9,10], [1,11], [11,12], [12,13],
             [1,0], [0,14], [14,16], [0,15], [15,17],
@@ -49,6 +66,11 @@ pose_pairs_BODY_21 = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
             [1,8], [8,9], [9,10], [12,13],
             [1,0], [0,14], [14,16], [0,15], [15,17],
             [2,17], [5,16], [2, 8], [5, 11]])
+
+pose_pairs_BODY_25 = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
+            [1,8], [8,9], [9,10], [12,13], [8,12], [10,11], 
+            [11,24], [11,22], [22,23], [13,14], [14,21], [14,19], [19,20],
+            [1,0], [0,15], [0,16], [15,17], [16,18]])
 
 pose_pairs_BODY_25 = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
             [1,8], [8,9], [9,10], [12,13], [8,12], [10,11], 
