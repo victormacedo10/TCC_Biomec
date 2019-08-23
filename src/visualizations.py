@@ -6,37 +6,7 @@ import os
 from support import *
 from detection import *
 from preprocessing import *
-
-proto_file = "../Models/Openpose/coco/pose_deploy_linevec.prototxt"
-weights_file = "../Models/Openpose/coco/pose_iter_440000.caffemodel"
-videos_dir = "../Videos/"
-data_dir = "../Data/"
-
-pose_pairs = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
-              [1,8], [8,9], [9,10], [1,11], [11,12], [12,13],
-              [1,0], [0,14], [14,16], [0,15], [15,17],
-              [2,17], [5,16], [2, 8], [5, 11]])
-
-colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255],
-         [0,255,0], [255,200,100], [255,0,255], [0,255,0], [255,200,100], [255,0,255],
-         [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], 
-         [0,0,0], [0,0,0], [0,255,0], [0,255,0]]
-
-colors_2 = [[0,255,0], [255,0,0], [0,0,255], [0,255,255],[255,255,0], 
-         [255,0,255], [0,255,0], [255,200,100], [200,255,100],
-         [100,255,200], [255,100,200], [100,200,255], [200,100,255],
-         [200,200,0], [200,0,200],[0,200,200]]
-
-indep_colors = [[1,0,0], [0,1,0], [0,0,1], 
-            [0,1,1],[0,0.25,0.5], [1, 0, 0.75], 
-            [1,1,1], [0, 0.5, 1], [1, 0.75, 0],
-            [0.5, 0.5, 0.5], [0, 0.25, 0],[0.1, 0.1, 0],
-            [0, 0, 0.25], [0.1, 0, 0.1], [0.6, 1, 0.6],
-            [0.5, 0, 0.25], [0.6, 1, 1], [1, 0.75, 1]]
-
-keypoints_mapping = ['Nose', 'Neck', 'Right Shoulder', 'Right Elbow', 'Right Wrist', 'Left Shoulder', 
-                    'Left Elbow', 'Left Wrist', 'Right Hip', 'Right Knee', 'Right Ankle', 'Left Hip', 
-                    'Left Knee', 'Left Ankle', 'Right Eye', 'Left Eye', 'Right Ear', 'Left Ear']
+import parameters
 
 def visualizeColoredVideo(video_name, file_name, thickness=3, joint_names = [-1]):
     if(video_name == "None"):
@@ -155,11 +125,11 @@ def visualizeKeypoints(frame, personwise_keypoints, keypoints_list, persons, joi
     plt.imshow(frame_out[:,:,[2,1,0]])
     plt.axis("off")
     
-def visualizeMainKeypoints(frame, sorted_keypoints, persons, joint_pairs):    
+def visualizeMainKeypoints(frame, pose_keypoints, persons, joint_pairs):    
     frame_out = frame.copy()
     
-    if (persons[0] == -1) or (max(persons) >= len(sorted_keypoints)):
-        persons = np.arange(len(sorted_keypoints))
+    if (persons[0] == -1) or (max(persons) >= len(pose_keypoints)):
+        persons = np.arange(len(pose_keypoints))
     
     try:
         joint_pairs[0]
@@ -172,8 +142,8 @@ def visualizeMainKeypoints(frame, sorted_keypoints, persons, joint_pairs):
     
     for n in persons:
         for i in joint_pairs:
-            A = tuple(sorted_keypoints[n][pose_pairs[i][0]].astype(int))
-            B = tuple(sorted_keypoints[n][pose_pairs[i][1]].astype(int))
+            A = tuple(pose_keypoints[n][joint_pairs[i][0]].astype(int))
+            B = tuple(pose_keypoints[n][joint_pairs[i][1]].astype(int))
             if (-1 in A) or (-1 in B):
                 continue
             cv2.line(frame_out, (A[0], A[1]), (B[0], B[1]), colors[i], 3, cv2.LINE_AA)
