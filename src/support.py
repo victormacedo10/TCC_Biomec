@@ -14,6 +14,16 @@ data_dir = "../Data/"
 
 n_points = 18
 
+def getPixel(coord_xy, f_height, mmppx=1, mmppy=1):
+    j = int(coord_xy[0]/mmppx)
+    i = int(f_height - (coord_xy[1]/mmppy))
+    return (j, i)
+
+def getCoord(pixel_ji, f_height, mmppx=1, mmppy=1):
+    x = pixel_ji[0]*mmppx
+    y = (f_height - pixel_ji[1])*mmppy
+    return (x, y)
+
 def changeKeypointsVector(personwise_keypoints, keypoints_list):
     unsorted_keypoints = -1*np.ones([len(personwise_keypoints), n_points, 2])
     for n in range(len(personwise_keypoints)):
