@@ -4,7 +4,7 @@ Project using Openpose as a markerless pose estimation tool along with addition 
 
 The project consists of mainly three steps, presented in the diagram below
 
-![alt logo]("images/Etapa1)
+![alt logo](images/Etapa1)
 
 The result of the processing is 
 
