@@ -1,2 +1,3 @@
-# Biomechanics Graduation Project
-Markerless human pose estimation using single RBG camera to extract biomechanic measurements
+# Rowing Biomechanics Automatic Analysis
+
+Project using Openpose as a markerless pose estimation tool along with addition processing, in order to acquire biomechanical parameters such as stroke cadence and body angulations.
