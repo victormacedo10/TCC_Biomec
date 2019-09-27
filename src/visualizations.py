@@ -6,7 +6,14 @@ import os
 from support import *
 from detection import *
 from preprocessing import *
-import parameters
+
+colors_2 = [[0,255,0], [255,0,0], [0,0,255], [0,255,255],[255,255,0], 
+         [255,0,255], [0,255,0], [255,200,100], [200,255,100],
+         [100,255,200], [255,100,200], [100,200,255], [200,100,255],
+         [200,200,0], [200,0,200],[0,200,200]]
+
+data_dir = "/home/victormacedo10/0.TCC/TCC_Biomec/Data/"
+videos_dir = "/home/victormacedo10/0.TCC/TCC_Biomec/Videos/"
 
 def visualizeColoredVideo(video_name, file_name, thickness=3, joint_names = [-1]):
     if(video_name == "None"):
@@ -142,6 +149,10 @@ def visualizeMainKeypoints(frame, pose_keypoints, persons, joint_pairs):
     
     for n in persons:
         for i in joint_pairs:
+            print(pose_keypoints.shape)
+            print(n)
+            print(joint_pairs)
+            print(i)
             A = tuple(pose_keypoints[n][joint_pairs[i][0]].astype(int))
             B = tuple(pose_keypoints[n][joint_pairs[i][1]].astype(int))
             if (-1 in A) or (-1 in B):
