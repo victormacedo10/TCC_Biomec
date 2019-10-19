@@ -91,3 +91,4 @@ pose_pairs_BODY_25 = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
 
 object_x_mm = 75.0
 object_y_mm = 75.0
+

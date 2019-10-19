@@ -165,15 +165,25 @@ def get_curr_screen_geometry():
     width = geometry[0]
     height = (geometry[1].split('+'))[0]
     return int(width), int(height)
+def getPixel(coord_xy, f_height, mmppx=1, mmppy=1):
+    j = int(coord_xy[0]/mmppx)
+    i = int(f_height - (coord_xy[1]/mmppy))
+    return (j, i)
 
-def readFrameJSON(file_path, frame_n=0):
-    with open(file_path, 'r') as f:
-        for i, line in enumerate(f):
-            if i==0:
-                metadata = json.loads(line)
-            elif i==frame_n+1:
-                data = json.loads(line)
-    return metadata, data
+def getCoord(pixel_ji, f_height, mmppx=1, mmppy=1):
+    x = pixel_ji[0]*mmppx
+    y = (f_height - pixel_ji[1])*mmppy
+    return (x, y)
+
+def changeKeypointsVector(personwise_keypoints, keypoints_list):
+    unsorted_keypoints = -1*np.ones([len(personwise_keypoints), n_points, 2])
+    for n in range(len(personwise_keypoints)):
+        for i in range(n_points):
+            index = personwise_keypoints[n][i]
+            if index == -1:
+                continue
+            unsorted_keypoints[n][i] = keypoints_list[int(personwise_keypoints[n][i])][0:2]
+    return unsorted_keypoints
 
 def readFrameDATA(file_path, frame_n=0):
     with open(file_path, 'r') as f:
@@ -194,6 +204,15 @@ def readMultipleFramesDATA(file_path, frames=[0]):
                 keypoints_vector.append(data["keypoints"])
     keypoints_vector = np.array(keypoints_vector).astype(float)
     return keypoints_vector
+
+def readFrameJSON(file_path, frame_n=0):
+    with open(file_path, 'r') as f:
+        for i, line in enumerate(f):
+            if i==0:
+                metadata = json.loads(line)
+            elif i==frame_n+1:
+                data = json.loads(line)
+    return metadata, data
 
 def readAllFramesDATA(file_path):
     keypoints_vec = []
@@ -224,11 +243,8 @@ def getFrame(video_name, n, allvid=False):
 
 def getFrames(video_name, n):
     input_source = videos_dir + video_name
-    
     cap = cv2.VideoCapture(input_source)
-    
     frames = []
-    
     for i in n:
         cap.set(cv2.CAP_PROP_POS_FRAMES, n)
         has_frame, image = cap.read()
@@ -237,6 +253,7 @@ def getFrames(video_name, n):
     cap.release()
     
     return frames
+
 
 def angle3pt(a, b, c):
     if b in (a, c):
