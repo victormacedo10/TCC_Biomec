@@ -22,7 +22,7 @@ def colorizeImage(input_video, arguments, joint_pairs = [0, 1, 2, 3, 4, 5, 6, 7,
         if 'F' in arguments:
             print("Initilize filtering")
             saveProcessedFileAll(input_video, output_name + "_I" + ".data", output_name + "_ISK", "selective_kalman_processing.py", summary)
-    else: 
+    else:
         print("Begin all steps")
         print("Initilize detection")
         videoInference(input_video, summary, output_name, threshold=0.1, n_interp_samples=10, paf_score_th=0.1, conf_th=0.7)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 from support import *
 from detection import *
-from preprocessing import *
+from preprocessing_OP import *
 from parameters import *
 
 colors_t = [(0,255,0), (0,0,255), (0,0,0), (255,255,255)]
@@ -70,6 +70,10 @@ def rectAreatoFrame(frame, pose_keypoints):
 
 def poseDATAtoFrame(frame, pose_keypoints, persons, joint_names, pairs_names, thickness=3, color = -1):
     try:
+        single = False
+        if persons == 0:
+            persons = [0]
+            single = True
         if persons == -1:
             persons = np.arange(pose_keypoints.shape[0])
 
@@ -82,8 +86,12 @@ def poseDATAtoFrame(frame, pose_keypoints, persons, joint_names, pairs_names, th
             for pair in pairs_names:
                 A_idx = joint_names.index(pair[0])
                 B_idx = joint_names.index(pair[1])
-                A = tuple(pose_keypoints[n][A_idx][:2].astype(int))
-                B = tuple(pose_keypoints[n][B_idx][:2].astype(int))
+                if single:
+                    A = tuple(pose_keypoints[A_idx][:2].astype(int))
+                    B = tuple(pose_keypoints[B_idx][:2].astype(int))
+                else:
+                    A = tuple(pose_keypoints[n][A_idx][:2].astype(int))
+                    B = tuple(pose_keypoints[n][B_idx][:2].astype(int))
                 if (0 in A) or (0 in B):
                     i+=1
                     continue
@@ -101,3 +109,19 @@ def showFrame(frame):
     plt.imshow(frame[:,:,[2,1,0]])
     plt.axis("off")
     plt.show()
+
+def poseDATAtoCI(frame, keypoints_vector, thickness=3):
+    frame = np.zeros(frame.shape)
+
+    for i in range(1, len(keypoints_vector)):
+        for j in range(keypoints_vector.shape[1]): 
+            A = tuple(keypoints_vector[i-1,j,:].astype(int))
+            B = tuple(keypoints_vector[i,j,:].astype(int))
+            if (-1 in A) or (-1 in B):
+                continue
+            if (0 in A) or (0 in B):
+                continue
+            cv2.line(frame, (A[0], A[1]), (B[0], B[1]), indep_colors[j], thickness, cv2.LINE_AA)
+            if(i==1):
+                print(indep_colors[j])
+    return frame

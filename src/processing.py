@@ -7,30 +7,182 @@ import numpy as np
 import matplotlib.pyplot as plt
 from support import *
 from detection import *
+from preprocessing_OP import organizeBiggestPerson, selectJoints, fillwInterp
+from visualizations_OP import poseDATAtoFrame, rectAreatoFrame, showFrame
+from parameters import *
+from kinematics import *
+from sys import platform
+import argparse
 
-videos_dir = "../Videos/"
-data_dir = "../Data/"
+# Change these variables to point to the correct folder (Release/x64 etc.) 
+sys.path.append(openpose_path + 'build/python')
+from openpose import pyopenpose as op
+sys.path.append(repo_path + 'postprocessing')
+from kalman_processing import processing_function
 
-n_points = 18
 
-map_idx = np.array([[31,32], [39,40], [33,34], [35,36], [41,42], [43,44], 
-          [19,20], [21,22], [23,24], [25,26], [27,28], [29,30], 
-          [47,48], [49,50], [53,54], [51,52], [55,56], 
-          [37,38], [45,46]])
+def processKeypointsData(video_name, output_name, nn_model="BODY_25", pose_model="BODY_25", process_params="BIK", 
+                        save_video=True, show_video=True, save_data=True, show_frame=False, fitted=False):
+    if fitted:
+        width, height = get_curr_screen_geometry()
+    else:
+        width, height = 640, 480
+    
+    nn_mapping, new_mapping, new_pairs = getPoseParameters(nn_model, pose_model)
 
-pose_pairs = np.array([[1,2], [1,5], [2,3], [3,4], [5,6], [6,7],
-              [1,8], [8,9], [9,10], [1,11], [11,12], [12,13],
-              [1,0], [0,14], [14,16], [0,15], [15,17],
-              [2,17], [5,16], [2, 8], [5, 11]])
+    # Custom Params (refer to include/openpose/flags.hpp for more parameters)
+    params = dict()
+    params["model_folder"] = openpose_path + "models/"
 
-colors = [[0,100,255], [0,100,255], [0,255,255], [0,100,255], [0,255,255], [0,100,255],
-         [0,255,0], [255,200,100], [255,0,255], [0,255,0], [255,200,100], [255,0,255],
-         [0,0,255], [255,0,0], [200,200,0], [255,0,0], [200,200,0], 
-         [0,0,0], [0,0,0], [0,255,0], [0,255,0]]
+    try:
+        # Starting OpenPose
+        opWrapper = op.WrapperPython()
+        opWrapper.configure(params)
+        opWrapper.start()
+        datum = op.Datum()
+        
+        video_path = getVideoPath(video_name)
+        video_out_path, output_path = setOutputPath(video_name, output_name)
+        file_metadata = setMetadata(video_name, new_mapping, new_pairs)
+        frame_width, frame_height, fps = file_metadata["frame_width"], file_metadata["frame_height"], file_metadata["fps"]
+        
+        cap = cv2.VideoCapture(video_path)
+        if save_data:
+            writeToDATA(output_path, file_metadata, write_mode='w')
+        if save_video:
+            fourcc = cv2.VideoWriter_fourcc(*'X264')
+            vid_writer = cv2.VideoWriter(video_out_path, fourcc, fps, (frame_width,frame_height))
 
-keypoints_mapping = ['Nose', 'Neck', 'Right Shoulder', 'Right Elbow', 'Right Wrist', 'Left Shoulder', 
-                    'Left Elbow', 'Left Wrist', 'Right Hip', 'Right Knee', 'Right Ankle', 'Left Hip', 
-                    'Left Knee', 'Left Ankle', 'Right Eye', 'Left Eye', 'Right Ear', 'Left Ear']
+        if(cap.isOpened() == False):
+            print("Error opening video stream or file")
+        while(cap.isOpened):
+            # Process Image
+            ret, imageToProcess = cap.read()
+            if not ret:
+                break
+
+            # Start timer
+            timer = cv2.getTickCount()
+
+            datum.cvInputData = imageToProcess
+            opWrapper.emplaceAndPop([datum])
+            pose_keypoints = datum.poseKeypoints
+            try:
+                pose_keypoints = pose_keypoints[:,:, :2]
+            except:
+                pose_keypoints = np.zeros([1, len(new_mapping), 2])
+            pose_keypoints = selectJoints(pose_keypoints, nn_mapping, new_mapping)
+            if 'B' in process_params:
+                pose_keypoints = organizeBiggestPerson(pose_keypoints)
+                pose_keypoints = pose_keypoints[0]
+            if show_video or save_video or show_frame:
+                if 'B' in process_params:
+                    img_out = poseDATAtoFrame(imageToProcess, pose_keypoints, 0, new_mapping, new_pairs, thickness=3, color = -1)
+                else:
+                    img_out = poseDATAtoFrame(imageToProcess, pose_keypoints, [0], new_mapping, new_pairs, thickness=3, color = -1)
+                if save_video:
+                    vid_writer.write(img_out)
+            if save_data:
+                pose_keypoints = np.round(pose_keypoints).astype(int)
+                file_data = {
+                'keypoints': pose_keypoints.tolist()
+                }
+                writeToDATA(output_path, file_data, write_mode='a')
+
+            if show_video or show_frame:
+                # Calculate Frames per second (FPS)
+                fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
+                # Display FPS on frame
+                cv2.putText(img_out, "FPS : " + str(int(fps)), (100,50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50), 2)
+                
+                # Display Image
+                cv2.namedWindow('OpenPose', cv2.WINDOW_NORMAL)
+                cv2.resizeWindow('OpenPose', (width, height))
+                cv2.imshow("OpenPose", img_out)
+            if show_frame:
+                while True:
+                    if(cv2.waitKey(25) & 0xFF == ord('q')):
+                        break
+            else:
+                if(cv2.waitKey(25) & 0xFF == ord('q')):
+                    break
+
+    except KeyboardInterrupt:
+        cap.release()
+        vid_writer.release()
+        cv2.destroyAllWindows()
+        sys.exit(-1)
+
+    cap.release()
+    vid_writer.release()
+    cv2.destroyAllWindows()
+
+    if 'I' or 'K' in process_params:
+        print("Start Processing")
+        _, keypoints_vector = readAllFramesDATA(output_path)
+        if 'I' in process_params:
+            keypoints_vec = fillwInterp(keypoints_vector)
+        if 'K' in process_params:
+            keypoints_vec = processing_function(keypoints_vec)
+
+        video_path = getVideoPath(video_name)
+        video_out_path, output_path = setOutputPath(video_name, output_name + process_params)
+        cap = cv2.VideoCapture(video_path)
+        if save_data:
+            writeToDATA(output_path, file_metadata, write_mode='w')
+        if save_video:
+            fourcc = cv2.VideoWriter_fourcc(*'X264')
+            vid_writer = cv2.VideoWriter(video_out_path, fourcc, fps, (frame_width,frame_height))
+
+        if(cap.isOpened() == False):
+            print("Error opening video stream or file")
+        for i in range(len(keypoints_vec)):
+            # Process Image
+            ret, imageToProcess = cap.read()
+            if not ret:
+                break
+
+            # Start timer
+            timer = cv2.getTickCount()
+
+            pose_keypoints = keypoints_vec[i]
+            angles = inverseKinematicsRowing(pose_keypoints)
+
+            if show_video or save_video or show_frame:
+                if 'B' in process_params:
+                    img_out = poseDATAtoFrame(imageToProcess, pose_keypoints, 0, new_mapping, new_pairs, thickness=3, color = -1)
+                else:
+                    img_out = poseDATAtoFrame(imageToProcess, pose_keypoints, [0], new_mapping, new_pairs, thickness=3, color = -1)
+                if save_video:
+                    vid_writer.write(img_out)
+            if save_data:
+                file_data = {
+                'keypoints': pose_keypoints.tolist(),
+                'angles': angles.tolist()
+                }
+                writeToDATA(output_path, file_data, write_mode='a')
+
+            if show_video or show_frame:
+                # Calculate Frames per second (FPS)
+                fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
+                # Display FPS on frame
+                cv2.putText(img_out, "FPS : " + str(int(fps)), (100,50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50), 2)
+                
+                # Display Image
+                cv2.namedWindow('OpenPose', cv2.WINDOW_NORMAL)
+                cv2.resizeWindow('OpenPose', (width, height))
+                cv2.imshow("OpenPose", img_out)
+            if show_frame:
+                while True:
+                    if(cv2.waitKey(25) & 0xFF == ord('q')):
+                        break
+            else:
+                if(cv2.waitKey(25) & 0xFF == ord('q')):
+                    break
+
+        cap.release()
+        vid_writer.release()
+        cv2.destroyAllWindows()
 
 def angle3pt(a, b, c):
     if b in (a, c):
@@ -259,5 +411,3 @@ def saveProcessedFileOnline(video_name_ext, file_name, output_name, function_ext
     vid_writer.release()
     print()
     print("Done")
-
-# saveProcessedAngles("Victor.mp4", "OP_API_K.data", "OP_API_K_Ang_Knee", "Angles Test")

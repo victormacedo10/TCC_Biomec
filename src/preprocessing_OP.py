@@ -107,7 +107,7 @@ def fillwKalman(keypoints_vector, t):
     return keypoints_vector
 
 def missingDataInterpolation(X, interp='cubic'):
-    X = np.where(X==-1, np.nan, X)
+    X = np.where(X==0, np.nan, X)
     X = pd.Series(X)
     X_out = X.interpolate(limit_direction='both', kind=interp)
     return X_out
